@@ -19,6 +19,7 @@ import java.net.Socket;
 
 import android.util.Log;
 
+import android.widget.TextClock;
 import android.widget.TextView;
 
 import org.java_websocket.client.WebSocketClient;
@@ -27,10 +28,15 @@ import org.java_websocket.handshake.ServerHandshake;
 import java.net.URI;
 import java.net.URISyntaxException;
 public class MainActivity extends AppCompatActivity {
-    private static final String SERVER_IP = "192.168.17.177"; // Replace with the IP address of your Raspberry Pi Pico board
+    private static final String SERVER_IP = "192.168.1.9"; // Replace with the IP address of your Raspberry Pi Pico board
     private static final int SERVER_PORT = 80; // Replace with the port number used by the Python code
 
-    private Button btnOn, btnOff;
+    private Button btnOn, btnOff, btnConnect;
+    private TextView lbl_connect;
+
+    Socket socket = null;
+    PrintWriter out = null;
+    BufferedReader in = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,11 +45,23 @@ public class MainActivity extends AppCompatActivity {
 
         btnOn = (Button) findViewById(R.id.btn_on);
         btnOff = (Button) findViewById(R.id.btn_off);
+        btnConnect = (Button) findViewById(R.id.btn_connect);
+        lbl_connect = (TextView) findViewById(R.id.lbl_connect);
+
+        btnConnect.setOnClickListener(v -> {
+            if ( socket == null ) {
+                connectToDevice();
+            } else {
+                disconnectFromDevice();
+                lbl_connect.setText("Disconnected");
+                btnConnect.setText("Connect");
+            }
+        });
 
         btnOn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new LedControlTask().execute("1");
+                new SendCommandTask().execute("1");
                 Log.i( "TAG"," trimis 1");
             }
         });
@@ -51,52 +69,97 @@ public class MainActivity extends AppCompatActivity {
         btnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new LedControlTask().execute("0");
+                new SendCommandTask().execute("0");
                 Log.i( "TAG"," trimis 0");
             }
         });
     }
 
-    private class LedControlTask extends AsyncTask<String, Void, String> {
+    private void disconnectFromDevice() {
+        if ( in != null ) {
+            try {
+                in.close();
+            } catch (IOException e) {
 
+            }
+        }
+        if ( out != null ) {
+            out.close();
+        }
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+
+            }
+        }
+
+        socket = null;
+        out = null;
+        in = null;
+    }
+
+    private void connectToDevice() {
+        new ConnectionTask().execute();
+        Log.i( "ConnectionTask"," pornire connectare la Device");
+    }
+
+    private class ConnectionTask extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... params) {
-            Log.d("TAG","doInBackground");
-            Socket socket = null;
-            PrintWriter out = null;
-            BufferedReader in = null;
+            Log.d("ConnectionTask","doInBackground");
             String response = null;
             try {
                 socket = new Socket(SERVER_IP, SERVER_PORT);
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                Log.d("ConnectionTask", "connected");
 
-                String message = params[0];
-                out.println(message);
-                response = in.readLine();
-                Log.i( "TAG",response);
+                response = "ok";
 
             } catch (Exception e) {
                 Log.i( "TAG",e.toString());
                 e.printStackTrace();
-            } finally {
-                if ( in != null ) {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
+            }
+            return response;
+        }
 
-                    }
-                }
-                if ( out != null ) {
-                    out.close();
-                }
-                if (socket != null) {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
+        @Override
+        protected void onPostExecute(String response) {
+            // Handle the response from the server here
+            if (response == null) {
+                Log.d("ConnectionTask","could not connect to device");
+                lbl_connect.setText("Could not connect to device");
+                btnConnect.setText("Connect");
+            } else {
+                Log.d("ConnectionTask","Connected to device");
+                lbl_connect.setText("Connected");
+                btnConnect.setText("Disconect");
+            }
 
-                    }
-                }
+        }
+    }
+
+    private class SendCommandTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            Log.d("TAG","doInBackground");
+            if ( socket == null || out == null || in == null ){
+                Log.d("SendCommandTask", "cannot send command if we are not connected");
+                return null;
+            }
+
+            String response = null;
+            try {
+                String message = params[0];
+                out.println(message);
+                response = in.readLine();
+                Log.i( "RESPONSE_TAG",response);
+            } catch (Exception e) {
+                Log.i( "ERROR_TAG", e.toString());
+                e.printStackTrace();
+                disconnectFromDevice();
             }
 
             Log.d("TAG","sent the data");
