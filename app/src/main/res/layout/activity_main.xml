@@ -46,4 +46,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
          />
+
+    <TextView
+        android:id="@+id/paramsTextView"
+        android:layout_width="351dp"
+        android:layout_height="0dp"
+        android:text=""
+        app:layout_constraintBottom_toTopOf="@+id/btn_sayHi"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_off" />
+
+    <Button
+        android:id="@+id/btn_sayHi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="say hi"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_off"
+        app:layout_constraintVertical_bias="0.762" />
 </androidx.constraintlayout.widget.ConstraintLayout>

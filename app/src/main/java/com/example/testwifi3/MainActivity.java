@@ -24,15 +24,16 @@ import android.widget.TextView;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.w3c.dom.Text;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 public class MainActivity extends AppCompatActivity {
-    private static final String SERVER_IP = "192.168.1.9"; // Replace with the IP address of your Raspberry Pi Pico board
+    private static final String SERVER_IP = "192.168.52.177"; // Replace with the IP address of your Raspberry Pi Pico board
     private static final int SERVER_PORT = 80; // Replace with the port number used by the Python code
 
-    private Button btnOn, btnOff, btnConnect;
-    private TextView lbl_connect;
+    private Button btnOn, btnOff, btnConnect, btnSayHi;
+    private TextView lbl_connect, params_text_view;
 
     Socket socket = null;
     PrintWriter out = null;
@@ -45,8 +46,11 @@ public class MainActivity extends AppCompatActivity {
 
         btnOn = (Button) findViewById(R.id.btn_on);
         btnOff = (Button) findViewById(R.id.btn_off);
+        btnSayHi = ( Button ) findViewById(R.id.btn_sayHi);
         btnConnect = (Button) findViewById(R.id.btn_connect);
         lbl_connect = (TextView) findViewById(R.id.lbl_connect);
+
+        params_text_view = (TextView) findViewById(R.id.paramsTextView);
 
         btnConnect.setOnClickListener(v -> {
             if ( socket == null ) {
@@ -71,6 +75,14 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 new SendCommandTask().execute("0");
                 Log.i( "TAG"," trimis 0");
+            }
+        });
+
+        btnSayHi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick( View v  ) {
+                new SendCommandTask().execute("sayHi");
+                Log.i("COMMAND_TASK", "trimis somanda pt sayHi :D");
             }
         });
     }
@@ -151,10 +163,13 @@ public class MainActivity extends AppCompatActivity {
             }
 
             String response = null;
+            String resposes[] = {};
+
             try {
                 String message = params[0];
                 out.println(message);
                 response = in.readLine();
+                params_text_view.setText(response);
                 Log.i( "RESPONSE_TAG",response);
             } catch (Exception e) {
                 Log.i( "ERROR_TAG", e.toString());
