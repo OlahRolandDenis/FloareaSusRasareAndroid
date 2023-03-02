@@ -19,6 +19,7 @@ import java.net.Socket;
 
 import android.util.Log;
 
+import android.widget.EditText;
 import android.widget.TextClock;
 import android.widget.TextView;
 
@@ -29,11 +30,13 @@ import org.w3c.dom.Text;
 import java.net.URI;
 import java.net.URISyntaxException;
 public class MainActivity extends AppCompatActivity {
-    private static final String SERVER_IP = "192.168.52.177"; // Replace with the IP address of your Raspberry Pi Pico board
+    private static final String SERVER_IP = "192.168.1.5"; // Replace with the IP address of your Raspberry Pi Pico board
     private static final int SERVER_PORT = 80; // Replace with the port number used by the Python code
 
     private Button btnOn, btnOff, btnConnect, btnSayHi;
     private TextView lbl_connect, params_text_view;
+
+    private EditText ip_address_input;
 
     Socket socket = null;
     PrintWriter out = null;
@@ -49,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
         btnSayHi = ( Button ) findViewById(R.id.btn_sayHi);
         btnConnect = (Button) findViewById(R.id.btn_connect);
         lbl_connect = (TextView) findViewById(R.id.lbl_connect);
+
+        ip_address_input = (EditText) findViewById(R.id.ipAddressInput);
 
         params_text_view = (TextView) findViewById(R.id.paramsTextView);
 
@@ -122,7 +127,8 @@ public class MainActivity extends AppCompatActivity {
             Log.d("ConnectionTask","doInBackground");
             String response = null;
             try {
-                socket = new Socket(SERVER_IP, SERVER_PORT);
+                String ipAddressValue = ip_address_input.getText().toString();
+                socket = new Socket(ipAddressValue, SERVER_PORT);
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 Log.d("ConnectionTask", "connected");
@@ -163,13 +169,28 @@ public class MainActivity extends AppCompatActivity {
             }
 
             String response = null;
-            String resposes[] = {};
 
             try {
                 String message = params[0];
                 out.println(message);
-                response = in.readLine();
-                params_text_view.setText(response);
+
+                if ( message != "1" && message != "0")
+                    params_text_view.setText("waiting...");
+
+                response = in.readLine();   // gets only the first line of the message that is sent
+
+                String[] parts = response.split("   ");
+                Log.d("STRING_PARTS", "Logging parts: ");
+
+                // display the sent data on the screen
+                if ( parts.length > 1 ) {
+                    params_text_view.setText("");
+                    for (int index = 0; index < parts.length - 1; index++) {
+                        Log.d("STRING_PARTS", parts[index]);
+                        params_text_view.setText(params_text_view.getText() + "\n" + parts[index]);
+                    }
+                }
+
                 Log.i( "RESPONSE_TAG",response);
             } catch (Exception e) {
                 Log.i( "ERROR_TAG", e.toString());
