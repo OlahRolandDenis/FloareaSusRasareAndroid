@@ -2,6 +2,8 @@ package com.example.testwifi3;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import android.os.AsyncTask;
@@ -42,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     PrintWriter out = null;
     BufferedReader in = null;
 
+    private UserSettings settings;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,9 +57,9 @@ public class MainActivity extends AppCompatActivity {
         btnConnect = (Button) findViewById(R.id.btn_connect);
         lbl_connect = (TextView) findViewById(R.id.lbl_connect);
 
-        ip_address_input = (EditText) findViewById(R.id.ipAddressInput);
-
         params_text_view = (TextView) findViewById(R.id.paramsTextView);
+
+        settings = ( UserSettings ) getApplication();
 
         btnConnect.setOnClickListener(v -> {
             if ( socket == null ) {
@@ -90,6 +94,25 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("COMMAND_TASK", "trimis somanda pt sayHi :D");
             }
         });
+
+        loadSharedPreferences();
+    }
+
+
+    private void loadSharedPreferences() {
+
+        SharedPreferences sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
+
+        String ip_address = sharedPreferences.getString(UserSettings.CURRENT_IP_ADDRESS, UserSettings.LAST_IP_ADDRESS);
+
+        settings.setIPAddress(ip_address);
+
+        updateView();
+    }
+
+    public void updateView() {
+        TextView ipAddressTextView = ( TextView ) findViewById(R.id.currentIPAddressTextView);
+        ipAddressTextView.setText(settings.getIPAddress());
     }
 
     private void disconnectFromDevice() {
@@ -119,6 +142,13 @@ public class MainActivity extends AppCompatActivity {
     private void connectToDevice() {
         new ConnectionTask().execute();
         Log.i( "ConnectionTask"," pornire connectare la Device");
+    }
+
+    public void navigateToSettings( View view ) {
+        Log.d("NAVIGATE", "click to navigate to settings :D");
+
+        Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+        startActivity(intent);
     }
 
     private class ConnectionTask extends AsyncTask<String, Void, String> {
