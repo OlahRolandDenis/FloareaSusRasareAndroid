@@ -63,6 +63,7 @@ public class SettingsActivity extends AppCompatActivity {
             adapter.notifyItemInserted(items.size() - 1);
 
            navigateToMainActivity();
+
         });
     }
 
