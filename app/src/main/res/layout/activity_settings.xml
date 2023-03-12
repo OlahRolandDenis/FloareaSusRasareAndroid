@@ -30,25 +30,12 @@
         app:layout_constraintStart_toEndOf="@+id/ipAddressInput"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/ipsRecyclerView"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="36dp"
-        android:layout_marginTop="36dp"
-        android:text="Recent IP Addresses: "
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ipAddressInput" />
-
-    <com.google.android.material.button.MaterialButton
-        android:layout_width="wrap_content"
-        android:layout_height="110px"
-        android:layout_marginStart="36dp"
-        android:text="192.168.5.1"
-        android:textColor="@color/purple_700"
-        android:textStyle="bold"
-        app:backgroundTint="#2D000000"
-        app:cornerRadius="5dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toBottomOf="@+id/ipAddressInput"
+        android:layout_margin="30dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

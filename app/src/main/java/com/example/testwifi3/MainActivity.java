@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnOn, btnOff, btnConnect, btnSayHi;
     private TextView lbl_connect, params_text_view;
-    
+
     Socket socket = null;
     PrintWriter out = null;
     BufferedReader in = null;
