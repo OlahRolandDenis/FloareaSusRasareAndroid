@@ -31,6 +31,9 @@ import org.w3c.dom.Text;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.Set;
+
 public class MainActivity extends AppCompatActivity {
     private static final String SERVER_IP = "192.168.1.5"; // Replace with the IP address of your Raspberry Pi Pico board
     private static final int SERVER_PORT = 80; // Replace with the port number used by the Python code
@@ -44,10 +47,14 @@ public class MainActivity extends AppCompatActivity {
 
     private UserSettings settings;
 
+    SharedPreferences sharedPreferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
 
         btnOn = (Button) findViewById(R.id.btn_on);
         btnOff = (Button) findViewById(R.id.btn_off);
@@ -93,17 +100,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        Set<String> set = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
+        System.out.println(set);
+
         loadSharedPreferences();
     }
 
 
     private void loadSharedPreferences() {
 
-        SharedPreferences sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
-
         String ip_address = sharedPreferences.getString(UserSettings.CURRENT_IP_ADDRESS, UserSettings.LAST_IP_ADDRESS);
 
         settings.setIPAddress(ip_address);
+
+        Set<String> news = new HashSet<String>();
+        news = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
+        System.out.println(news);
 
         updateView();
     }

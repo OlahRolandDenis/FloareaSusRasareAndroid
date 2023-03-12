@@ -12,8 +12,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -28,10 +30,17 @@ public class SettingsActivity extends AppCompatActivity {
 
     IPsAdapter adapter;
 
+    SharedPreferences sharedPreferences;
+    SharedPreferences.Editor editor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+
+        sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
 
         settings = ( UserSettings ) getApplication();
         mainActivity = new MainActivity();
@@ -54,7 +63,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         saveBtn.setOnClickListener( v-> {
             settings.setIPAddress(ipAddressInput.getText().toString());
-            SharedPreferences.Editor editor = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE).edit();
+
             editor.putString(settings.getIPAddress(), settings.getIPAddress());
             editor.apply();
 
@@ -62,9 +71,17 @@ public class SettingsActivity extends AppCompatActivity {
             counter += 1;
             adapter.notifyItemInserted(items.size() - 1);
 
-           navigateToMainActivity();
+            saveItemsToSharedPreferences();
+            navigateToMainActivity();
 
         });
+    }
+
+    private void saveItemsToSharedPreferences() {
+        Set<String> set = new HashSet<String>();
+        set.addAll(items);
+
+        editor.putStringSet("ALL_IP_ADDRESSES", set).apply();
     }
 
     public void navigateToMainActivity() {
