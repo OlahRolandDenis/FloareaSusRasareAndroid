@@ -3,6 +3,7 @@ package com.example.testwifi3;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -43,10 +44,20 @@ class IPsVH extends RecyclerView.ViewHolder {
     TextView textView;
     private IPsAdapter adapter;
 
+    private UserSettings settings;
+
     public IPsVH(@NonNull View itemView) {
         super(itemView);
 
         textView = itemView.findViewById(R.id.ipItemText);
+
+        itemView.setOnClickListener( view -> {
+            String text = ((TextView)view.findViewById(R.id.ipItemText)).getText().toString();
+            settings.setIPAddress(text);
+            ((Button)view.findViewById(R.id.ipItemDeleteButton)).setText("selected");
+
+            System.out.println("I WAS CLICKED! ++++ " + textView.getText() );
+        });
 
         itemView.findViewById(R.id.ipItemDeleteButton).setOnClickListener(view -> {
             adapter.items.remove(getAdapterPosition());

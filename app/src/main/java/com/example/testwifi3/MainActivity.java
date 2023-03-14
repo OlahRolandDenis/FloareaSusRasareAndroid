@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String SERVER_IP = "192.168.1.5"; // Replace with the IP address of your Raspberry Pi Pico board
     private static final int SERVER_PORT = 80; // Replace with the port number used by the Python code
 
-    private Button btnOn, btnOff, btnConnect, btnSayHi;
+    private Button btnOn, btnOff, btnConnect, btnGetInfo;
     private TextView lbl_connect, params_text_view;
 
     Socket socket = null;
@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnOn = (Button) findViewById(R.id.btn_on);
         btnOff = (Button) findViewById(R.id.btn_off);
-        btnSayHi = ( Button ) findViewById(R.id.btn_sayHi);
+        btnGetInfo = ( Button ) findViewById(R.id.btn_getInfo);
         btnConnect = (Button) findViewById(R.id.btn_connect);
         lbl_connect = (TextView) findViewById(R.id.lbl_connect);
 
@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        btnSayHi.setOnClickListener(new View.OnClickListener() {
+        btnGetInfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick( View v  ) {
                 new SendCommandTask().execute("sayHi");
@@ -100,8 +100,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Set<String> set = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
-        System.out.println(set);
+        Set<String> ipAddressesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
+        System.out.println("ipAddressesSet is: " + ipAddressesSet);
 
         loadSharedPreferences();
     }
@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadSharedPreferences() {
 
-        String ip_address = sharedPreferences.getString(UserSettings.CURRENT_IP_ADDRESS, UserSettings.LAST_IP_ADDRESS);
+        String ip_address = sharedPreferences.getString(UserSettings.SELECTED_IP_ADDRESS, "no ip address");
 
         settings.setIPAddress(ip_address);
 
@@ -166,19 +166,23 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(String... params) {
             Log.d("ConnectionTask","doInBackground");
             String response = null;
+
             try {
-                String ipAddressValue = UserSettings.CURRENT_IP_ADDRESS;
-                socket = new Socket(ipAddressValue, SERVER_PORT);
+                String IP_ADDRESS = UserSettings.SELECTED_IP_ADDRESS;   // get selected ip address ( from settings )
+
+                // connect to ip address and the socket "assigned" to it
+                socket = new Socket(IP_ADDRESS, SERVER_PORT);
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                // give feedback that all is good
                 Log.d("ConnectionTask", "connected");
-
                 response = "ok";
-
             } catch (Exception e) {
-                Log.i( "TAG",e.toString());
+                Log.i( "TAG", e.toString());
                 e.printStackTrace();
             }
+
             return response;
         }
 

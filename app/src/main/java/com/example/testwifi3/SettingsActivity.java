@@ -64,11 +64,16 @@ public class SettingsActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         initIPAddressListener();
+
+        saveBtn.setOnClickListener( v -> {
+            saveItemsToSharedPreferences();
+            navigateToMainActivity();
+        });
     }
 
     private void initIPAddressListener() {
 
-        addNewIpBtn.setOnClickListener( v-> {
+        addNewIpBtn.setOnClickListener( v -> {
             settings.setIPAddress(ipAddressInput.getText().toString());
 
             editor.putString(settings.getIPAddress(), settings.getIPAddress());
@@ -80,11 +85,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         });
 
-        saveBtn.setOnClickListener( v -> {
-            saveItemsToSharedPreferences();
-            navigateToMainActivity();
 
-        });
     }
 
     private void saveItemsToSharedPreferences() {
