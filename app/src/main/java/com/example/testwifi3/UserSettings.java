@@ -6,17 +6,13 @@ public class UserSettings extends Application {
 
     public static final String PREFERENCES = "preferences";
 
-    public static  String CURRENT_IP_ADDRESS = "currentIpAddress";
-    public static final String LAST_IP_ADDRESS = "lastIPADDress";
-
-    private String ip_address;
+    public static String SELECTED_IP_ADDRESS = "selectedIpAddress";
 
     public String getIPAddress() {
-        return ip_address;
+        return this.SELECTED_IP_ADDRESS;
     }
 
     public void setIPAddress(String ipAddress ) {
-        this.ip_address = ipAddress;
-        this.CURRENT_IP_ADDRESS = ipAddress;
+        this.SELECTED_IP_ADDRESS = ipAddress;
     }
 }
