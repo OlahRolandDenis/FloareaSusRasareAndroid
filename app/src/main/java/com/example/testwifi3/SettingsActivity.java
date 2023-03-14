@@ -22,7 +22,7 @@ public class SettingsActivity extends AppCompatActivity {
     private MainActivity mainActivity;
     private UserSettings settings;
 
-    Button saveBtn;
+    Button addNewIpBtn, saveBtn;
     EditText ipAddressInput;
 
     int counter = 0;
@@ -46,10 +46,17 @@ public class SettingsActivity extends AppCompatActivity {
         mainActivity = new MainActivity();
 
         saveBtn = ( Button ) findViewById(R.id.saveBtn);
+        addNewIpBtn = ( Button ) findViewById(R.id.addNewIpBtn);
         ipAddressInput = (EditText) findViewById(R.id.ipAddressInput);
 
 
-        items.add("code it");
+        Set<String> sharedPreferencesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
+
+        sharedPreferencesSet.forEach(item -> {
+            items.add(item);
+        });
+
+        System.out.println(items);
 
         RecyclerView recyclerView = findViewById(R.id.ipsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this ));
@@ -61,7 +68,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void initIPAddressListener() {
 
-        saveBtn.setOnClickListener( v-> {
+        addNewIpBtn.setOnClickListener( v-> {
             settings.setIPAddress(ipAddressInput.getText().toString());
 
             editor.putString(settings.getIPAddress(), settings.getIPAddress());
@@ -71,6 +78,9 @@ public class SettingsActivity extends AppCompatActivity {
             counter += 1;
             adapter.notifyItemInserted(items.size() - 1);
 
+        });
+
+        saveBtn.setOnClickListener( v -> {
             saveItemsToSharedPreferences();
             navigateToMainActivity();
 
