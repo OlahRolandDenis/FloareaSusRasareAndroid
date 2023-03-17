@@ -49,12 +49,14 @@ public class SettingsActivity extends AppCompatActivity {
         addNewIpBtn = ( Button ) findViewById(R.id.addNewIpBtn);
         ipAddressInput = (EditText) findViewById(R.id.ipAddressInput);
 
-
         Set<String> sharedPreferencesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
 
-        sharedPreferencesSet.forEach(item -> {
-            items.add(item);
-        });
+        if ( sharedPreferencesSet != null )
+            sharedPreferencesSet.forEach(item -> {
+                items.add(item);
+            });
+        else
+            items.add("hey");
 
         System.out.println(items);
 
