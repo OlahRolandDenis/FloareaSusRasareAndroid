@@ -95,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         btnGetInfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick( View v  ) {
+                Log.d("SETTING FROM MAIN", " MiAI IP: " + settings.getIPAddress());
                 new SendCommandTask().execute("sayHi");
                 Log.i("COMMAND_TASK", "trimis somanda pt sayHi :D");
             }
