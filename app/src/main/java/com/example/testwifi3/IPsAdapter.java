@@ -74,7 +74,6 @@ class IPsVH extends RecyclerView.ViewHolder {
         Log.d("SETTINGS", settings.getIPAddress());
     }
     public IPsVH linkAdapter(IPsAdapter adapter ) {
-
         this.adapter = adapter;
         return this;
     }
