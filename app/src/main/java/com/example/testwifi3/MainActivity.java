@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         settings = ( UserSettings ) getApplication();
 
         btnConnect.setOnClickListener(v -> {
+            navigateToSettings2(v);
             if ( socket == null ) {
                 connectToDevice();
             } else {
@@ -159,6 +160,14 @@ public class MainActivity extends AppCompatActivity {
         Log.d("NAVIGATE", "click to navigate to settings :D");
 
         Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+        startActivity(intent);
+    }
+
+    // TO BE DELETED
+    public void navigateToSettings2( View view ) {
+        Log.d("NAVIGATE", "click to navigate to settings :D");
+
+        Intent intent = new Intent(MainActivity.this, SettingsActivity2.class);
         startActivity(intent);
     }
 

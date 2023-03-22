@@ -4,8 +4,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -52,9 +54,9 @@ public class SettingsActivity extends AppCompatActivity {
         Set<String> sharedPreferencesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
 
         if ( sharedPreferencesSet != null )
-            sharedPreferencesSet.forEach(item -> {
-                items.add(item);
-            });
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                items.addAll(sharedPreferencesSet);
+            }
         else
             items.add("hey");
 
@@ -87,7 +89,6 @@ public class SettingsActivity extends AppCompatActivity {
 
         });
 
-
     }
 
     private void saveItemsToSharedPreferences() {
@@ -97,6 +98,10 @@ public class SettingsActivity extends AppCompatActivity {
         editor.putStringSet("ALL_IP_ADDRESSES", set).apply();
     }
 
+    @SuppressLint("CommitPrefEdits")
+    public void updateSharedPreferences(String key, String value) {
+        sharedPreferences.edit().putString(key, value);
+    }
     public void navigateToMainActivity() {
         Log.d("NAVIGATE", "click to navigate to settings :D");
 

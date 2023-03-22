@@ -1,6 +1,5 @@
 package com.example.testwifi3;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,6 +10,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.shadow.ShadowRenderer;
 
 import java.util.List;
 
@@ -57,7 +58,7 @@ class IPsVH extends RecyclerView.ViewHolder {
         itemView.findViewById(R.id.btnSelectIp).setOnClickListener(view -> {
             Log.d("SELECT", "SELECTED " + textView.getText());
             changeIpAddress(textView.getText().toString());
-           selectBtn.setText("selected");
+            selectBtn.setText("selected");
         });
 
         itemView.findViewById(R.id.ipItemDeleteButton).setOnClickListener(view -> {
@@ -72,7 +73,9 @@ class IPsVH extends RecyclerView.ViewHolder {
 
         settings.setIPAddress(ipAddress);
         Log.d("SETTINGS", settings.getIPAddress());
+        //    settings.updateSharedPreferences(settings.SELECTED_IP_ADDRESS, settings.getIPAddress());
     }
+
     public IPsVH linkAdapter(IPsAdapter adapter ) {
         this.adapter = adapter;
         return this;
