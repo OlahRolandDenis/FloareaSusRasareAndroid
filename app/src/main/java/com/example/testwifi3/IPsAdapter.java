@@ -1,5 +1,6 @@
 package com.example.testwifi3;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.LayoutInflater;
