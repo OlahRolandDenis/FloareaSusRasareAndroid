@@ -45,6 +45,8 @@ public class Ip_RecyclerViewAdapter extends RecyclerView.Adapter<Ip_RecyclerView
         return ipModels.size();
     }
 
+
+
     public static class MyViewHoolder extends RecyclerView.ViewHolder {
         TextView tvIpValue;
 
