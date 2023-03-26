@@ -44,7 +44,7 @@ public class SettingsActivity2 extends AppCompatActivity {
         if ( saved_ips != null && saved_ips.size() > 0)
             for (Iterator<String> iterator = saved_ips.iterator(); iterator.hasNext(); ) {
                 String ipValue = iterator.next();
-                if ( ipValue.equals("1") )
+                if ( ipValue.equals(sharedPreferences.getString(UserSettings.SELECTED_IP_ADDRESS, "selectedIpAddress")) )
                     ipModels.add(
                             new IpModel(ipValue, true)
                     );

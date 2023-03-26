@@ -47,7 +47,7 @@ public class SettingsActivity extends AppCompatActivity {
         settings = ( UserSettings ) getApplication();
         mainActivity = new MainActivity();
 
-        saveBtn = ( Button ) findViewById(R.id.saveBtn);
+        saveBtn = ( Button ) findViewById(R.id.save1Btn);
         addNewIpBtn = ( Button ) findViewById(R.id.addNewIpBtn);
         ipAddressInput = (EditText) findViewById(R.id.ipAddressInput);
 

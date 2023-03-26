@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -34,9 +35,12 @@ public class Ip_RecyclerViewAdapter extends RecyclerView.Adapter<Ip_RecyclerView
     @Override
     public void onBindViewHolder(@NonNull Ip_RecyclerViewAdapter.MyViewHoolder holder, int position) {
         if ( ipModels.get(position).getIsChecked() )
-            holder.tvIpValue.setText("selected");
+            holder.btnSelectIp.setText("selected");
         else
-            holder.tvIpValue.setText(ipModels.get(position).getIpAddressValue());
+            holder.btnSelectIp.setText("select");
+
+        holder.tvIpValue.setText(ipModels.get(position).getIpAddressValue());
+        holder.btnDeleteIp.setText("x");
 
     }
 
@@ -49,11 +53,14 @@ public class Ip_RecyclerViewAdapter extends RecyclerView.Adapter<Ip_RecyclerView
 
     public static class MyViewHoolder extends RecyclerView.ViewHolder {
         TextView tvIpValue;
+        Button btnSelectIp, btnDeleteIp;
 
         public MyViewHoolder(@NonNull View itemView) {
             super(itemView);
 
             tvIpValue = itemView.findViewById(R.id.tvIpValue);
+            btnSelectIp = itemView.findViewById(R.id.btnSelectIp2);
+            btnDeleteIp = itemView.findViewById(R.id.btnDeleteIp);
         }
 
     }
