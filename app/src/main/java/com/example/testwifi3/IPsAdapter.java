@@ -12,11 +12,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.shadow.ShadowRenderer;
+
 import java.util.List;
 
 public class IPsAdapter extends RecyclerView.Adapter<IPsVH> {
 
     List<String> items;
+    UserSettings settings;
 
     public IPsAdapter( List<String> items ) {
         this.items = items;
@@ -35,6 +38,9 @@ public class IPsAdapter extends RecyclerView.Adapter<IPsVH> {
     @Override
     public void onBindViewHolder(@NonNull IPsVH holder, int position) {
         holder.textView.setText(items.get(position));
+
+        if ( items.get(position).equals(UserSettings.SELECTED_IP_ADDRESS) )
+            holder.selectBtn.setText("selected");
     }
 
     @Override
@@ -46,18 +52,20 @@ public class IPsAdapter extends RecyclerView.Adapter<IPsVH> {
 class IPsVH extends RecyclerView.ViewHolder {
 
     TextView textView;
+    Button selectBtn;
     private IPsAdapter adapter;
 
     public IPsVH(@NonNull View itemView) {
         super(itemView);
 
+
         textView = itemView.findViewById(R.id.ipItemText);
-        Button selectBtn = (Button) itemView.findViewById(R.id.btnSelectIp);
+        selectBtn = (Button) itemView.findViewById(R.id.btnSelectIp);
 
         itemView.findViewById(R.id.btnSelectIp).setOnClickListener(view -> {
             Log.d("SELECT", "SELECTED " + textView.getText());
             changeIpAddress(textView.getText().toString());
-           selectBtn.setText("selected");
+            selectBtn.setText("selected");
         });
 
         itemView.findViewById(R.id.ipItemDeleteButton).setOnClickListener(view -> {
@@ -71,8 +79,8 @@ class IPsVH extends RecyclerView.ViewHolder {
         UserSettings settings = new UserSettings();
 
         settings.setIPAddress(ipAddress);
-        Log.d("SETTINGS", settings.getIPAddress());
     }
+
     public IPsVH linkAdapter(IPsAdapter adapter ) {
         this.adapter = adapter;
         return this;

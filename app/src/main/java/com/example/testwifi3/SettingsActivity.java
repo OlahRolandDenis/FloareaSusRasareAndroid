@@ -4,8 +4,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -45,20 +47,15 @@ public class SettingsActivity extends AppCompatActivity {
         settings = ( UserSettings ) getApplication();
         mainActivity = new MainActivity();
 
-        saveBtn = ( Button ) findViewById(R.id.saveBtn);
+        saveBtn = ( Button ) findViewById(R.id.save1Btn);
         addNewIpBtn = ( Button ) findViewById(R.id.addNewIpBtn);
         ipAddressInput = (EditText) findViewById(R.id.ipAddressInput);
 
         Set<String> sharedPreferencesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
 
         if ( sharedPreferencesSet != null )
-            sharedPreferencesSet.forEach(item -> {
-                items.add(item);
-            });
-        else
-            items.add("hey");
-
-        System.out.println(items);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                items.addAll(sharedPreferencesSet);
 
         RecyclerView recyclerView = findViewById(R.id.ipsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this ));
@@ -84,9 +81,7 @@ public class SettingsActivity extends AppCompatActivity {
             items.add(ipAddressInput.getText().toString());
             counter += 1;
             adapter.notifyItemInserted(items.size() - 1);
-
         });
-
 
     }
 
