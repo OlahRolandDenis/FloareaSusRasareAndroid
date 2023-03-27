@@ -18,9 +18,6 @@
         android:windowSoftInputMode="adjustNothing"
         tools:targetApi="31">
         <activity
-            android:name=".SettingsActivity2"
-            android:exported="false" />
-        <activity
             android:name=".SettingsActivity"
             android:exported="false" />
         <activity
