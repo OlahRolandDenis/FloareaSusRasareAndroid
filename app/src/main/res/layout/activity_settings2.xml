@@ -20,15 +20,19 @@
         >
 
         <EditText
-            android:id="@+id/editTextTextPersonName"
+            android:id="@+id/tvNewIp"
             android:layout_width="429dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:hint="New IP Address"
         />
+
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddNewIp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:clickable="true"
+            android:onClick="addNewIP"
             android:text="add"
             android:layout_marginLeft="30dp"/>
     </LinearLayout>
@@ -46,7 +50,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/mRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="2.6in"
         android:layout_margin="30dp"
         android:paddingTop="80dp"
         android:paddingBottom="130dp"

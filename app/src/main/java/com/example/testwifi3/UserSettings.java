@@ -8,6 +8,7 @@ public class UserSettings extends Application {
 
     public static final String PREFERENCES = "preferences";
 
+    public static String SELECTED_IP_ADDRESS_KEY = "selectedIpAddress";
     public static String SELECTED_IP_ADDRESS = "selectedIpAddress";
 
     public String getIPAddress() {

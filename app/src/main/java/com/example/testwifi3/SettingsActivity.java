@@ -54,13 +54,8 @@ public class SettingsActivity extends AppCompatActivity {
         Set<String> sharedPreferencesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
 
         if ( sharedPreferencesSet != null )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
                 items.addAll(sharedPreferencesSet);
-            }
-        else
-            items.add("hey");
-
-        System.out.println(items);
 
         RecyclerView recyclerView = findViewById(R.id.ipsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this ));
@@ -86,7 +81,6 @@ public class SettingsActivity extends AppCompatActivity {
             items.add(ipAddressInput.getText().toString());
             counter += 1;
             adapter.notifyItemInserted(items.size() - 1);
-
         });
 
     }
@@ -98,10 +92,6 @@ public class SettingsActivity extends AppCompatActivity {
         editor.putStringSet("ALL_IP_ADDRESSES", set).apply();
     }
 
-    @SuppressLint("CommitPrefEdits")
-    public void updateSharedPreferences(String key, String value) {
-        sharedPreferences.edit().putString(key, value);
-    }
     public void navigateToMainActivity() {
         Log.d("NAVIGATE", "click to navigate to settings :D");
 
