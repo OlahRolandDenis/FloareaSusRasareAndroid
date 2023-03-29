@@ -23,6 +23,7 @@ import java.net.Socket;
 import android.util.Log;
 
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnOn, btnOff, btnConnect, btnGetInfo;
     private TextView params_text_view;
 
+    private LinearLayout paramsLayout;
     private CardView humidityCV, waterCV, oxygenCV;
 
     Socket socket = null;
@@ -65,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
         btnOff = (Button) findViewById(R.id.btn_off);
         btnGetInfo = ( Button ) findViewById(R.id.btn_getInfo);
         btnConnect = (Button) findViewById(R.id.btn_connect);
+
+        paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
 
         params_text_view = (TextView) findViewById(R.id.paramsTextView);
 
@@ -206,25 +210,28 @@ public class MainActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT
                 ).show();
             else
-            if (response == null) {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Could not connect to device 😞",
-                        Toast.LENGTH_SHORT
-                ).show();
+                if (response == null) {
+                    Toast.makeText(
+                            MainActivity.this,
+                            "Could not connect to device 😞",
+                            Toast.LENGTH_SHORT
+                    ).show();
 
-                Log.d("ConnectionTask","could not connect to device");
-                btnConnect.setText("Connect");
-            } else {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Connected to device! 😄",
-                        Toast.LENGTH_SHORT
-                ).show();
+                    paramsLayout.setVisibility(LinearLayout.VISIBLE);
+                    paramsLayout.animate().alpha(1.0f);
 
-                Log.d("ConnectionTask","Connected to device");
-                btnConnect.setText("Disconect");
-            }
+                    Log.d("ConnectionTask","could not connect to device");
+                    btnConnect.setText("Connect");
+                } else {
+                    Toast.makeText(
+                            MainActivity.this,
+                            "Connected to device! 😄",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    Log.d("ConnectionTask","Connected to device");
+                    btnConnect.setText("Disconect");
+                }
 
         }
     }
