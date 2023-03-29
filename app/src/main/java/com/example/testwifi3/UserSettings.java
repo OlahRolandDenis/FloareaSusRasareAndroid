@@ -10,6 +10,7 @@ public class UserSettings extends Application {
 
     public static String SELECTED_IP_ADDRESS_KEY = "selectedIpAddress";
     public static String SELECTED_IP_ADDRESS = "selectedIpAddress";
+    public static String SELECTED_IP_PORT = "8080";
 
     public String getIPAddress() {
         return SELECTED_IP_ADDRESS;

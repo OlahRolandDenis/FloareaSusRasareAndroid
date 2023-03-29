@@ -1,6 +1,7 @@
 package com.example.testwifi3;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -24,6 +25,7 @@ import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextClock;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -34,12 +36,15 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity {
-    private static final String SERVER_IP = "192.168.1.5"; // Replace with the IP address of your Raspberry Pi Pico board
-    private static final int SERVER_PORT = 80; // Replace with the port number used by the Python code
+import kotlinx.coroutines.MainCoroutineDispatcher;
 
+public class MainActivity extends AppCompatActivity {
+
+    String IP_ADDRESS;
     private Button btnOn, btnOff, btnConnect, btnGetInfo;
-    private TextView lbl_connect, params_text_view;
+    private TextView params_text_view;
+
+    private CardView humidityCV, waterCV, oxygenCV;
 
     Socket socket = null;
     PrintWriter out = null;
@@ -60,18 +65,17 @@ public class MainActivity extends AppCompatActivity {
         btnOff = (Button) findViewById(R.id.btn_off);
         btnGetInfo = ( Button ) findViewById(R.id.btn_getInfo);
         btnConnect = (Button) findViewById(R.id.btn_connect);
-        lbl_connect = (TextView) findViewById(R.id.lbl_connect);
 
         params_text_view = (TextView) findViewById(R.id.paramsTextView);
 
         settings = ( UserSettings ) getApplication();
+        IP_ADDRESS = settings.getIPAddress();
 
         btnConnect.setOnClickListener(v -> {
             if ( socket == null ) {
                 connectToDevice();
             } else {
                 disconnectFromDevice();
-                lbl_connect.setText("Disconnected");
                 btnConnect.setText("Connect");
             }
         });
@@ -113,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
         String ip_address = sharedPreferences.getString(UserSettings.SELECTED_IP_ADDRESS, "no ip address");
 
         settings.setIPAddress(ip_address);
+        IP_ADDRESS = ip_address;
 
         Set<String> news = new HashSet<String>();
         news = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
@@ -169,10 +174,11 @@ public class MainActivity extends AppCompatActivity {
             String response = null;
 
             try {
-                String IP_ADDRESS = UserSettings.SELECTED_IP_ADDRESS;   // get selected ip address ( from settings )
+                String IP_ADDRESS = UserSettings.SELECTED_IP_ADDRESS;// get selected ip address ( from settings )
+                String IP_PORT = UserSettings.SELECTED_IP_PORT;
 
                 // connect to ip address and the socket "assigned" to it
-                socket = new Socket(IP_ADDRESS, SERVER_PORT);
+                socket = new Socket(IP_ADDRESS, Integer.parseInt(IP_PORT));
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -180,6 +186,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("ConnectionTask", "connected");
                 response = "ok";
             } catch (Exception e) {
+                if ( IP_ADDRESS == "no ip address" || IP_ADDRESS == null )
+                    response = "NO_IP_ADDRESS";
+
                 Log.i( "TAG", e.toString());
                 e.printStackTrace();
             }
@@ -190,13 +199,30 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String response) {
             // Handle the response from the server here
+            if ( response == "NO_IP_ADDRESS" )
+                Toast.makeText(
+                        MainActivity.this,
+                        "PLEASE SELECT AN IP ADDRESS!",
+                        Toast.LENGTH_SHORT
+                ).show();
+            else
             if (response == null) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Could not connect to device 😞",
+                        Toast.LENGTH_SHORT
+                ).show();
+
                 Log.d("ConnectionTask","could not connect to device");
-                lbl_connect.setText("Could not connect to device");
                 btnConnect.setText("Connect");
             } else {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Connected to device! 😄",
+                        Toast.LENGTH_SHORT
+                ).show();
+
                 Log.d("ConnectionTask","Connected to device");
-                lbl_connect.setText("Connected");
                 btnConnect.setText("Disconect");
             }
 
