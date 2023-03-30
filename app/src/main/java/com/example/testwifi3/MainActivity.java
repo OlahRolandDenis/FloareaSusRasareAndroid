@@ -23,6 +23,7 @@ import java.net.Socket;
 import android.util.Log;
 
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
 import android.widget.TextView;
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
     String IP_ADDRESS;
     private Button btnOn, btnOff, btnConnect, btnGetInfo;
+    private ImageButton btnRefresh;
     private TextView params_text_view;
 
     private LinearLayout paramsLayout;
@@ -67,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
         btnOff = (Button) findViewById(R.id.btn_off);
         btnGetInfo = ( Button ) findViewById(R.id.btn_getInfo);
         btnConnect = (Button) findViewById(R.id.btn_connect);
+        btnRefresh = (ImageButton) findViewById(R.id.btnRefresh);
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
 
@@ -219,6 +222,7 @@ public class MainActivity extends AppCompatActivity {
 
                     paramsLayout.setVisibility(LinearLayout.VISIBLE);
                     paramsLayout.animate().alpha(1.0f);
+                    btnRefresh.setVisibility(ImageButton.VISIBLE);
 
                     Log.d("ConnectionTask","could not connect to device");
                     btnConnect.setText("Connect");
