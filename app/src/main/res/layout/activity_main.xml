@@ -7,6 +7,7 @@
     tools:context=".MainActivity">
 
     <include
+        android:id="@+id/include"
         layout="@layout/appbar" />
 
     <LinearLayout
@@ -90,39 +91,6 @@
         android:alpha="0.0"
         android:animateLayoutChanges="true">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/yellow"
-            android:orientation="vertical">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLedON"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="LED ON"
-                />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLedOFF"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="led off"
-                android:layout_marginTop="20dp"
-                />
-
-            <com.google.android.material.slider.Slider
-                android:id="@+id/ledSlider"
-                android:valueFrom="0"
-                android:valueTo="100"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:trackHeight="15dp"
-                android:stepSize="5"
-                />
-
-        </LinearLayout>
-
         <androidx.cardview.widget.CardView
             android:id="@+id/humidityCV"
             android:layout_width="match_parent"
@@ -178,7 +146,7 @@
             >
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/paramLayout2"
+                android:id="@+id/waterParamLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="15dp">
@@ -307,14 +275,15 @@
             app:cardBackgroundColor="#FDFDFD"
             app:cardCornerRadius="10dp"
             app:cardElevation="10dp"
+            android:clickable="true"
             >
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/paramLayout5"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="15dp">
-
+                android:padding="15dp"
+                >
                 <TextView
                     android:id="@+id/lblLEDParam"
                     android:layout_width="wrap_content"
@@ -344,5 +313,159 @@
 
     </LinearLayout>
     </ScrollView>
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/ledControlCV"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:elevation="100dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:alpha="0.0"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="30dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLedON"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="30dp"
+                    android:layout_marginRight="40dp"
+                    android:layout_weight="1"
+                    android:text="LED ON" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLedOFF"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginLeft="40dp"
+                    android:layout_marginRight="30dp"
+                    android:layout_weight="1"
+                    android:text="led off" />
+            </LinearLayout>
+
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/ledSlider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:stepSize="5"
+                android:valueFrom="0"
+                android:valueTo="100"
+                app:trackHeight="15dp" />
+
+            <TextView
+                android:id="@+id/btnCloseLedControl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="close"
+                android:textSize="20sp"
+                android:layout_marginTop="30dp"
+                android:textColor="@color/teal_700"
+                android:clickable="true"
+                android:textStyle="bold|italic"
+                />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/pumpsControlCV"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:elevation="100dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:alpha="1.0">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="30dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPump1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="30dp"
+                    android:layout_marginRight="40dp"
+                    android:layout_weight="1"
+                    android:text="P1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPump2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginLeft="40dp"
+                    android:layout_marginRight="30dp"
+                    android:layout_weight="1"
+                    android:text="P2" />
+            </LinearLayout>
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:hint="Milis: "
+                />
+
+
+            <TextView
+                android:id="@+id/btnClosePumpsControl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:clickable="true"
+                android:text="close"
+                android:textAlignment="center"
+                android:textColor="@color/teal_700"
+                android:textSize="20sp"
+                android:textStyle="bold|italic" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+    <View
+        android:id="@+id/bgTransparentView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+        android:background="@color/black"
+        android:alpha="0.0"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

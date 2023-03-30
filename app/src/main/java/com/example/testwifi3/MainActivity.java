@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.helper.widget.Carousel;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -52,15 +53,18 @@ public class MainActivity extends AppCompatActivity {
 
     String IP_ADDRESS;
 
+    View bgTransparentView;
+
     private Toolbar toolbar;
     private Button btnConnect;
     private ImageButton btnRefresh;
 
     private LinearLayout paramsLayout;
-    private CardView humidityCV, waterCV, oxygenCV;
+    private CardView humidityCV, waterCV, oxygenCV, ledCV, ledControlCV, pumpControlCV;
 
     private Slider ledSlider;
-    private MaterialButton btnLedON, btnLedOFF;
+
+    private MaterialButton btnLedOn, btnLedOff;
 
     Socket socket = null;
     PrintWriter out = null;
@@ -84,9 +88,18 @@ public class MainActivity extends AppCompatActivity {
         btnRefresh = (ImageButton) findViewById(R.id.btnRefresh);
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
-        btnLedON = (MaterialButton) findViewById(R.id.btnLedON);
-        btnLedOFF = (MaterialButton) findViewById(R.id.btnLedOFF);
-        ledSlider = (Slider) findViewById(R.id.ledSlider);
+
+        ledCV = findViewById(R.id.ledCV);
+        waterCV = findViewById(R.id.waterCV);
+
+        bgTransparentView = (View) findViewById(R.id.bgTransparentView);
+
+        ledControlCV = (CardView) findViewById(R.id.ledControlCV);
+        pumpControlCV = (CardView) findViewById(R.id.pumpsControlCV);
+
+        btnLedOn = findViewById(R.id.btnLedON);
+        btnLedOff = findViewById(R.id.btnLedOFF);
+        ledSlider = findViewById(R.id.ledSlider);
 
         settings = ( UserSettings ) getApplication();
         IP_ADDRESS = settings.getIPAddress();
@@ -109,16 +122,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        btnLedON.setOnClickListener(v -> {
-            turnOnLED();
+        ledCV.setOnClickListener(v->{
+            bgTransparentView.setAlpha(0.5f);
+            ledControlCV.setVisibility(CardView.VISIBLE);
+            ledControlCV.setAlpha(1.0f);
         });
 
-        btnLedOFF.setOnClickListener(v -> {
-            turnOffLED();
+        btnLedOn.setOnClickListener(v -> {
+            new SendCommandTask().execute("LED_ON");
+        });
+
+        btnLedOff.setOnClickListener(v -> {
+            new SendCommandTask().execute("LED_OFF");
         });
 
         ledSlider.addOnChangeListener((slider, value, fromUser) -> {
-            changeIntensityOfLED(value);
+            new SendCommandTask().execute("*" + value);
+        });
+
+        ledControlCV.findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
+            ledControlCV.setAlpha(0.0f);
+            ledControlCV.setVisibility(CardView.INVISIBLE);
+            bgTransparentView.setAlpha(0.0f);
+        });
+
+        waterCV.setOnClickListener(v -> {
+            pumpControlCV.setVisibility(CardView.VISIBLE);
+            pumpControlCV.setAlpha(1.0f);
+            bgTransparentView.setAlpha(0.5f);
         });
 
         Set<String> ipAddressesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
@@ -176,20 +207,6 @@ public class MainActivity extends AppCompatActivity {
         Log.i( "ConnectionTask"," pornire connectare la Device");
     }
 
-    private void turnOnLED() {
-        new SendCommandTask().execute("LED_ON");
-        System.out.println("command SENT for LED_ON");
-    }
-
-    private void turnOffLED() {
-        new SendCommandTask().execute("LED_OFF");
-        System.out.println("command SENT for LED_OFF");
-    }
-
-    private void changeIntensityOfLED(float value) {
-        new SendCommandTask().execute("*" + value);
-    }
-
     public void navigateToSettings( View view ) {
         Log.d("NAVIGATE", "click to navigate to settings :D");
 
@@ -208,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
                 String IP_PORT = UserSettings.SELECTED_IP_PORT;
 
                 // connect to ip address and the socket "assigned" to it
-                socket = new Socket("192.168.61.177", 80);
+                socket = new Socket(IP_ADDRESS, 80);
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -267,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class SendCommandTask extends AsyncTask<String, Void, String> {
+    public class SendCommandTask extends AsyncTask<String, Void, String> {
 
         @Override
         protected String doInBackground(String... params) {
