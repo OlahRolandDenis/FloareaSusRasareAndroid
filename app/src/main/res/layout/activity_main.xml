@@ -6,6 +6,9 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <include
+        layout="@layout/appbar" />
+
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="wrap_content"
@@ -19,8 +22,8 @@
             android:layout_height="48dp"
             android:layout_marginVertical="5dp"
             android:src="@android:drawable/ic_menu_revert"
-            android:background="@color/white"
-            app:tint="@color/black"
+            app:tint="@color/white"
+            android:background="@color/teal_700"
             android:visibility="invisible"/>
 
         <TextView
@@ -45,7 +48,8 @@
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout"
+        android:layout_marginTop="15dp">
 
         <TextView
             android:id="@+id/currentIPAddressTextView"

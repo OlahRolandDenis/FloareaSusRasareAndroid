@@ -1,6 +1,7 @@
 package com.example.testwifi3;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
 import android.content.Intent;
@@ -43,6 +44,8 @@ import kotlinx.coroutines.MainCoroutineDispatcher;
 public class MainActivity extends AppCompatActivity {
 
     String IP_ADDRESS;
+
+    private Toolbar toolbar;
     private Button btnOn, btnOff, btnConnect, btnGetInfo;
     private ImageButton btnRefresh;
     private TextView params_text_view;
@@ -63,6 +66,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        toolbar = (Toolbar) findViewById(R.id.myToolBar);
+        setSupportActionBar( toolbar );
+
         sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
 
         btnOn = (Button) findViewById(R.id.btn_on);
@@ -77,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
 
         settings = ( UserSettings ) getApplication();
         IP_ADDRESS = settings.getIPAddress();
+
+
 
         if ( settings.isIs_connected_to_device() ) {
             paramsLayout.setVisibility(LinearLayout.VISIBLE);
