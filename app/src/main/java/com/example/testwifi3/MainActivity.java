@@ -78,6 +78,13 @@ public class MainActivity extends AppCompatActivity {
         settings = ( UserSettings ) getApplication();
         IP_ADDRESS = settings.getIPAddress();
 
+        if ( settings.isIs_connected_to_device() ) {
+            paramsLayout.setVisibility(LinearLayout.VISIBLE);
+            paramsLayout.animate().alpha(1.0f);
+            btnRefresh.setVisibility(ImageButton.VISIBLE);
+        }
+
+
         btnConnect.setOnClickListener(v -> {
             if ( socket == null ) {
                 connectToDevice();
@@ -223,6 +230,8 @@ public class MainActivity extends AppCompatActivity {
                     paramsLayout.setVisibility(LinearLayout.VISIBLE);
                     paramsLayout.animate().alpha(1.0f);
                     btnRefresh.setVisibility(ImageButton.VISIBLE);
+
+                    settings.setIs_connected_to_device(true);
 
                     Log.d("ConnectionTask","could not connect to device");
                     btnConnect.setText("Connect");
