@@ -13,7 +13,7 @@ public class UserSettings extends Application {
 
     private boolean is_connected_to_device = false;
     public static String SELECTED_IP_ADDRESS = "selectedIpAddress";
-    public static String SELECTED_IP_PORT = "8080";
+    public static String SELECTED_IP_PORT = "80";
 
     public String getIPAddress() {
         return SELECTED_IP_ADDRESS;

@@ -1,5 +1,6 @@
 package com.example.testwifi3;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -12,6 +13,7 @@ import android.os.AsyncTask;
 
 
 import android.os.Debug;
+import android.transition.Slide;
 import android.view.View;
 import android.widget.Button;
 import java.io.BufferedReader;
@@ -26,9 +28,14 @@ import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.slider.RangeSlider;
+import com.google.android.material.slider.Slider;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -46,12 +53,14 @@ public class MainActivity extends AppCompatActivity {
     String IP_ADDRESS;
 
     private Toolbar toolbar;
-    private Button btnOn, btnOff, btnConnect, btnGetInfo;
+    private Button btnConnect;
     private ImageButton btnRefresh;
-    private TextView params_text_view;
 
     private LinearLayout paramsLayout;
     private CardView humidityCV, waterCV, oxygenCV;
+
+    private Slider ledSlider;
+    private MaterialButton btnLedON, btnLedOFF;
 
     Socket socket = null;
     PrintWriter out = null;
@@ -71,15 +80,13 @@ public class MainActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
 
-        btnOn = (Button) findViewById(R.id.btn_on);
-        btnOff = (Button) findViewById(R.id.btn_off);
-        btnGetInfo = ( Button ) findViewById(R.id.btn_getInfo);
         btnConnect = (Button) findViewById(R.id.btn_connect);
         btnRefresh = (ImageButton) findViewById(R.id.btnRefresh);
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
-
-        params_text_view = (TextView) findViewById(R.id.paramsTextView);
+        btnLedON = (MaterialButton) findViewById(R.id.btnLedON);
+        btnLedOFF = (MaterialButton) findViewById(R.id.btnLedOFF);
+        ledSlider = (Slider) findViewById(R.id.ledSlider);
 
         settings = ( UserSettings ) getApplication();
         IP_ADDRESS = settings.getIPAddress();
@@ -102,29 +109,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        btnOn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new SendCommandTask().execute("1");
-                Log.i( "TAG"," trimis 1");
-            }
+        btnLedON.setOnClickListener(v -> {
+            turnOnLED();
         });
 
-        btnOff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new SendCommandTask().execute("0");
-                Log.i( "TAG"," trimis 0");
-            }
+        btnLedOFF.setOnClickListener(v -> {
+            turnOffLED();
         });
 
-        btnGetInfo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick( View v  ) {
-                Log.d("SETTING FROM MAIN", " MiAI IP: " + settings.getIPAddress());
-                new SendCommandTask().execute("sayHi");
-                Log.i("COMMAND_TASK", "trimis somanda pt sayHi :D");
-            }
+        ledSlider.addOnChangeListener((slider, value, fromUser) -> {
+            changeIntensityOfLED(value);
         });
 
         Set<String> ipAddressesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
@@ -150,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateView() {
         TextView ipAddressTextView = ( TextView ) findViewById(R.id.currentIPAddressTextView);
-        ipAddressTextView.setText(settings.getIPAddress());
+        ipAddressTextView.setText("IP: " + settings.getIPAddress());
     }
 
     private void disconnectFromDevice() {
@@ -182,6 +176,20 @@ public class MainActivity extends AppCompatActivity {
         Log.i( "ConnectionTask"," pornire connectare la Device");
     }
 
+    private void turnOnLED() {
+        new SendCommandTask().execute("LED_ON");
+        System.out.println("command SENT for LED_ON");
+    }
+
+    private void turnOffLED() {
+        new SendCommandTask().execute("LED_OFF");
+        System.out.println("command SENT for LED_OFF");
+    }
+
+    private void changeIntensityOfLED(float value) {
+        new SendCommandTask().execute("*" + value);
+    }
+
     public void navigateToSettings( View view ) {
         Log.d("NAVIGATE", "click to navigate to settings :D");
 
@@ -200,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
                 String IP_PORT = UserSettings.SELECTED_IP_PORT;
 
                 // connect to ip address and the socket "assigned" to it
-                socket = new Socket(IP_ADDRESS, Integer.parseInt(IP_PORT));
+                socket = new Socket("192.168.61.177", 80);
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -227,7 +235,11 @@ public class MainActivity extends AppCompatActivity {
                         "PLEASE SELECT AN IP ADDRESS!",
                         Toast.LENGTH_SHORT
                 ).show();
-            else
+            else {
+                paramsLayout.setVisibility(LinearLayout.VISIBLE);
+                paramsLayout.animate().alpha(1.0f);
+                btnRefresh.setVisibility(ImageButton.VISIBLE);
+
                 if (response == null) {
                     Toast.makeText(
                             MainActivity.this,
@@ -235,13 +247,10 @@ public class MainActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT
                     ).show();
 
-                    paramsLayout.setVisibility(LinearLayout.VISIBLE);
-                    paramsLayout.animate().alpha(1.0f);
-                    btnRefresh.setVisibility(ImageButton.VISIBLE);
 
                     settings.setIs_connected_to_device(true);
 
-                    Log.d("ConnectionTask","could not connect to device");
+                    Log.d("ConnectionTask", "could not connect to device");
                     btnConnect.setText("Connect");
                 } else {
                     Toast.makeText(
@@ -250,9 +259,10 @@ public class MainActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT
                     ).show();
 
-                    Log.d("ConnectionTask","Connected to device");
+                    Log.d("ConnectionTask", "Connected to device");
                     btnConnect.setText("Disconect");
                 }
+            }
 
         }
     }
@@ -262,6 +272,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... params) {
             Log.d("TAG","doInBackground");
+
+            if ( params[0].charAt(0) == '*' ) {
+                System.out.println("you want to change the intensity of the led");
+            }
             if ( socket == null || out == null || in == null ){
                 Log.d("SendCommandTask", "cannot send command if we are not connected");
                 return null;
@@ -273,8 +287,17 @@ public class MainActivity extends AppCompatActivity {
                 String message = params[0];
                 out.println(message);
 
-                if ( message != "1" && message != "0")
-                    params_text_view.setText("waiting...");
+                if ( message == "LED_ON" ) {
+                    System.out.println("SENT MESSAGE TO TURN ON THE LED");
+                }
+
+                if ( message == "LED_OFF") {
+                    System.out.println("SENT MESSAGE TO TURN OFF THE LED");
+                }
+
+                if ( message.charAt(0) == '*' ) {
+                    System.out.println("you want to change the intensity of the led");
+                }
 
                 response = in.readLine();   // gets only the first line of the message that is sent
 
@@ -283,10 +306,8 @@ public class MainActivity extends AppCompatActivity {
 
                 // display the sent data on the screen
                 if ( parts.length > 1 ) {
-                    params_text_view.setText("");
                     for (int index = 0; index < parts.length - 1; index++) {
                         Log.d("STRING_PARTS", parts[index]);
-                        params_text_view.setText(params_text_view.getText() + "\n" + parts[index]);
                     }
                 }
 
