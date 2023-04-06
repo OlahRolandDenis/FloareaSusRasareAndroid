@@ -6,6 +6,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.helper.widget.Carousel;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -40,6 +41,9 @@ import android.widget.Toast;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.RangeSlider;
 import com.google.android.material.slider.Slider;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -47,8 +51,19 @@ import org.w3c.dom.Text;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.HashSet;
+import java.util.Scanner;
 import java.util.Set;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import kotlinx.coroutines.MainCoroutineDispatcher;
 
@@ -79,10 +94,18 @@ public class MainActivity extends AppCompatActivity {
 
     SharedPreferences sharedPreferences;
 
+    // private static  final String BASE_URL = "https://80.97.250.38:55443/oxygenie/test.php"; // global IP raspberry
+    // private static  final String BASE_URL = "https://192.168.4.210/oxygenie/test.php";   // local IP raspberry
+
+     private static  final String BASE_URL = "https://192.168.1.6:5501/index.html";
+    // private static  final String urlsend = "https://android.taxi-ineu.ro/sendClient.php";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        NukeSSLCerts.nuke();
 
         toolbar = (Toolbar) findViewById(R.id.myToolBar);
         setSupportActionBar( toolbar );
@@ -232,75 +255,200 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private class ConnectionTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... params) {
-            Log.d("ConnectionTask","doInBackground");
-            String response = null;
+    public static class NukeSSLCerts {
+        protected static final String TAG = "NukeSSLCerts";
 
+        public static void nuke() {
             try {
-                String IP_ADDRESS = UserSettings.SELECTED_IP_ADDRESS;// get selected ip address ( from settings )
-                String IP_PORT = UserSettings.SELECTED_IP_PORT;
+                TrustManager[] trustAllCerts = new TrustManager[]{
+                        new X509TrustManager() {
+                            public X509Certificate[] getAcceptedIssuers() {
+                                X509Certificate[] myTrustedAnchors = new X509Certificate[0];
+                                return myTrustedAnchors;
+                            }
 
-                // connect to ip address and the socket "assigned" to it
-                socket = new Socket(IP_ADDRESS, 80);
-                out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                            @Override
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                            }
 
-                // give feedback that all is good
-                Log.d("ConnectionTask", "connected");
-                response = "ok";
+                            @Override
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                            }
+                        }
+                };
+
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, trustAllCerts, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String arg0, SSLSession arg1) {
+                        return true;
+                    }
+                });
             } catch (Exception e) {
-                if ( IP_ADDRESS == "no ip address" || IP_ADDRESS == null )
-                    response = "NO_IP_ADDRESS";
-
-                Log.i( "TAG", e.toString());
-                e.printStackTrace();
             }
-
-            return response;
         }
+    }//NukeSSLCerts
 
-        @Override
-        protected void onPostExecute(String response) {
-            // Handle the response from the server here
-            if ( response == "NO_IP_ADDRESS" )
-                Toast.makeText(
-                        MainActivity.this,
-                        "PLEASE SELECT AN IP ADDRESS!",
-                        Toast.LENGTH_SHORT
-                ).show();
-            else {
-                paramsLayout.setVisibility(LinearLayout.VISIBLE);
-                paramsLayout.animate().alpha(1.0f);
-                btnRefresh.setVisibility(ImageButton.VISIBLE);
+    class ConnectionTask extends AsyncTask<String, Void, Void> {
 
-                if (response == null) {
-                    Toast.makeText(
-                            MainActivity.this,
-                            "Could not connect to device 😞",
-                            Toast.LENGTH_SHORT
-                    ).show();
+        private Exception exception;
 
+        @SuppressLint("SetTextI18n")
+        protected Void doInBackground(String... urls) {
+            try {
+                URL url = new URL(BASE_URL);
 
-                    settings.setIs_connected_to_device(true);
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
 
-                    Log.d("ConnectionTask", "could not connect to device");
-                    btnConnect.setText("Connect");
+                int response_code = conn.getResponseCode();
+                if ( response_code != 200 ) {
+                    throw new RuntimeException("HttpResponseCode: " + response_code);
                 } else {
-                    Toast.makeText(
-                            MainActivity.this,
-                            "Connected to device! 😄",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    System.out.println("connection secure!!!");
 
-                    Log.d("ConnectionTask", "Connected to device");
-                    btnConnect.setText("Disconect");
+                    btnConnect.setText("DISCONNECT");
+                //    Toast.makeText(getApplicationContext(), "connected to server! <3", Toast.LENGTH_SHORT).show();
+
+                    StringBuilder informationString  = new StringBuilder();
+                    Scanner scanner = new Scanner(url.openStream());
+
+                    while ( scanner.hasNext() ) {
+                        informationString.append(scanner.nextLine());
+                    }
+
+                    scanner.close();
+                 //   System.out.println(informationString);
+
+                    if ( informationString.substring(0, 1) != "[" ) {
+                        System.out.println("not a correct stirng");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((TextView)findViewById(R.id.tvStatus)).setText(
+                                        "connected to server \n but cannot retrieve JSON :)"
+                                );
+                            }
+                        });
+                    } else {
+                        JsonParser parse = new JsonParser();
+                        JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
+
+                        System.out.println("DATA OBJ: " + dataObject);
+                        System.out.println("DATA OBJ LENGTH: " + dataObject.size());
+
+
+                        // UPDATE THE UI
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                for ( int i = 0; i < dataObject.size(); i++ ){
+                                    JsonObject data = (JsonObject) dataObject.get(i);
+
+                                    ((TextView)findViewById(R.id.tvStatus)).setText(
+                                            ((TextView) findViewById(R.id.tvStatus)).getText() +
+                                                    (data.get("nume")).toString().replace("\"", "") + "  "
+                                                    + (data.get("prenume")).toString().replace("\"", "")
+                                                    + ": "
+                                                    + (data.get("varsta")).toString().replace("\"", "")
+                                                    + "\n"
+                                    );
+                                }
+                            }
+                        });
+                    }
                 }
+            } catch (Exception e) {
+                this.exception = e;
+                e.printStackTrace();
+            } finally {
+                System.out.println("reached the end :////");
             }
 
+            return null;
         }
+
+        protected void onPostExecute() {
+            // TODO: check this.exception
+            // TODO: do something with the feed
+
+            System.out.println(this.exception);
+        }
+
     }
+
+//    private class ConnectionTask extends AsyncTask<String, Void, String> {
+//        @Override
+//        protected String doInBackground(String... params) {
+//            Log.d("ConnectionTask","doInBackground");
+//            String response = null;
+//
+//            try {
+//                String IP_ADDRESS = UserSettings.SELECTED_IP_ADDRESS;// get selected ip address ( from settings )
+//                String IP_PORT = UserSettings.SELECTED_IP_PORT;
+//
+//                // connect to ip address and the socket "assigned" to it
+//                socket = new Socket(IP_ADDRESS, 80);
+//                out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+//                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//
+//                // give feedback that all is good
+//                Log.d("ConnectionTask", "connected");
+//                response = "ok";
+//            } catch (Exception e) {
+//                if ( IP_ADDRESS == "no ip address" || IP_ADDRESS == null )
+//                    response = "NO_IP_ADDRESS";
+//
+//                Log.i( "TAG", e.toString());
+//                e.printStackTrace();
+//            }
+//
+//            return response;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(String response) {
+//            // Handle the response from the server here
+//            if ( response == "NO_IP_ADDRESS" )
+//                Toast.makeText(
+//                        MainActivity.this,
+//                        "PLEASE SELECT AN IP ADDRESS!",
+//                        Toast.LENGTH_SHORT
+//                ).show();
+//            else {
+//                paramsLayout.setVisibility(LinearLayout.VISIBLE);
+//                paramsLayout.animate().alpha(1.0f);
+//                btnRefresh.setVisibility(ImageButton.VISIBLE);
+//
+//                if (response == null) {
+//                    Toast.makeText(
+//                            MainActivity.this,
+//                            "Could not connect to device 😞",
+//                            Toast.LENGTH_SHORT
+//                    ).show();
+//
+//
+//                    settings.setIs_connected_to_device(true);
+//
+//                    Log.d("ConnectionTask", "could not connect to device");
+//                    btnConnect.setText("Connect");
+//                } else {
+//                    Toast.makeText(
+//                            MainActivity.this,
+//                            "Connected to device! 😄",
+//                            Toast.LENGTH_SHORT
+//                    ).show();
+//
+//                    Log.d("ConnectionTask", "Connected to device");
+//                    btnConnect.setText("Disconect");
+//                }
+//            }
+//
+//        }
+//    }
 
     public class SendCommandTask extends AsyncTask<String, Void, String> {
 

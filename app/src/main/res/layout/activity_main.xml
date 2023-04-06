@@ -65,7 +65,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbarControlLayout"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="10dp"
+        android:baselineAligned="true">
 
         <TextView
             android:id="@+id/currentIPAddressTextView"
@@ -82,7 +83,7 @@
 
         <Button
             android:id="@+id/btn_connect"
-            android:layout_width="wrap_content"
+            android:layout_width="140dp"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:layout_marginRight="30dp"
@@ -520,5 +521,15 @@
         android:background="@color/black"
         android:alpha="0"
         />
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ledControlCV" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
