@@ -16,6 +16,7 @@ import android.os.AsyncTask;
 import android.os.Debug;
 import android.transition.Slide;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,8 +29,10 @@ import android.util.Log;
 
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,14 +60,16 @@ public class MainActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
     private Button btnConnect;
-    private ImageButton btnRefresh;
+    private ImageView btnRefresh;
 
     private LinearLayout paramsLayout;
     private CardView humidityCV, waterCV, oxygenCV, ledCV, ledControlCV, pumpControlCV;
+    private Spinner spinnerPumps;
 
     private Slider ledSlider;
 
     private MaterialButton btnLedOn, btnLedOff;
+    private EditText inputMilisWater;
 
     Socket socket = null;
     PrintWriter out = null;
@@ -85,12 +90,19 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
 
         btnConnect = (Button) findViewById(R.id.btn_connect);
-        btnRefresh = (ImageButton) findViewById(R.id.btnRefresh);
+        btnRefresh = (ImageView) findViewById(R.id.btnRefresh);
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
 
         ledCV = findViewById(R.id.ledCV);
         waterCV = findViewById(R.id.waterCV);
+
+        spinnerPumps = findViewById(R.id.spinnerPumps);
+        ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
+        spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        spinnerPumps.setAdapter(spinner_adapter);
+
+        inputMilisWater = findViewById(R.id.inputMilisWater);
 
         bgTransparentView = (View) findViewById(R.id.bgTransparentView);
 
@@ -150,6 +162,12 @@ public class MainActivity extends AppCompatActivity {
             pumpControlCV.setVisibility(CardView.VISIBLE);
             pumpControlCV.setAlpha(1.0f);
             bgTransparentView.setAlpha(0.5f);
+        });
+
+        pumpControlCV.findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
+            pumpControlCV.setAlpha(0.0f);
+            pumpControlCV.setVisibility(CardView.INVISIBLE);
+            bgTransparentView.setAlpha(0.0f);
         });
 
         Set<String> ipAddressesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
@@ -317,6 +335,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 response = in.readLine();   // gets only the first line of the message that is sent
+                System.out.println("RESPONSE SENZORI: " + response);
 
                 String[] parts = response.split("   ");
                 Log.d("STRING_PARTS", "Logging parts: ");
