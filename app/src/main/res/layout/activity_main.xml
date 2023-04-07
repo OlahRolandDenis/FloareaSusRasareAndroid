@@ -28,8 +28,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-
-
         <ImageView
             android:id="@+id/btnRefresh"
             android:layout_width="40dp"
@@ -66,7 +64,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbarControlLayout"
         android:layout_marginTop="10dp"
-        android:baselineAligned="true">
+        android:baselineAligned="true"
+        android:visibility="invisible">
 
         <TextView
             android:id="@+id/currentIPAddressTextView"
@@ -105,7 +104,7 @@
 
         android:orientation="vertical"
         android:layout_marginTop="30dp"
-        android:alpha="0.0"
+        android:alpha="1.0"
         android:animateLayoutChanges="true">
 
         <androidx.cardview.widget.CardView
@@ -520,6 +519,19 @@
 
         android:background="@color/black"
         android:alpha="0"
+        />
+
+    <Button
+        android:id="@+id/btnSendReq"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+
+        android:text="send req"
+
         />
 
     <TextView

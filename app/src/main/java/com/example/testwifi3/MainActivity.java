@@ -1,56 +1,41 @@
 package com.example.testwifi3;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.cardview.widget.CardView;
-import androidx.constraintlayout.helper.widget.Carousel;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
-
 import android.os.AsyncTask;
-
-
-import android.os.Debug;
-import android.transition.Slide;
+import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.Socket;
-
-import android.util.Log;
-
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Spinner;
-import android.widget.TextClock;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.slider.RangeSlider;
 import com.google.android.material.slider.Slider;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
-import org.w3c.dom.Text;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.Socket;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -64,8 +49,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-
-import kotlinx.coroutines.MainCoroutineDispatcher;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -94,10 +77,10 @@ public class MainActivity extends AppCompatActivity {
 
     SharedPreferences sharedPreferences;
 
-    // private static  final String BASE_URL = "https://80.97.250.38:55443/oxygenie/test.php"; // global IP raspberry
-    // private static  final String BASE_URL = "https://192.168.4.210/oxygenie/test.php";   // local IP raspberry
+     // private static  final String BASE_URL = "https://80.97.250.38:55443/oxygenie/test.php"; // global IP raspberry
+    private static  final String BASE_URL = "https://192.168.4.210/oxygenie/test.php";   // local IP raspberry
 
-     private static  final String BASE_URL = "https://192.168.1.6:5501/index.html";
+    // private static  final String BASE_URL = "https://192.168.5.206:5501/index.html";
     // private static  final String urlsend = "https://android.taxi-ineu.ro/sendClient.php";
 
     @Override
@@ -106,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         NukeSSLCerts.nuke();
+
+        new ConnectionTask().execute();
 
         toolbar = (Toolbar) findViewById(R.id.myToolBar);
         setSupportActionBar( toolbar );
@@ -193,6 +178,10 @@ public class MainActivity extends AppCompatActivity {
             bgTransparentView.setAlpha(0.0f);
         });
 
+        ((Button)findViewById(R.id.btnSendReq)).setOnClickListener(v->{
+            new PostReq().execute();
+        });
+
         Set<String> ipAddressesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
         System.out.println("ipAddressesSet is: " + ipAddressesSet);
 
@@ -250,7 +239,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void navigateToSettings( View view ) {
         Log.d("NAVIGATE", "click to navigate to settings :D");
-
         Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
         startActivity(intent);
     }
@@ -311,7 +299,6 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("connection secure!!!");
 
                     btnConnect.setText("DISCONNECT");
-                //    Toast.makeText(getApplicationContext(), "connected to server! <3", Toast.LENGTH_SHORT).show();
 
                     StringBuilder informationString  = new StringBuilder();
                     Scanner scanner = new Scanner(url.openStream());
@@ -321,9 +308,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     scanner.close();
-                 //   System.out.println(informationString);
 
-                    if ( informationString.substring(0, 1) != "[" ) {
+                    if ( informationString.charAt(0) != '[' ) {
                         System.out.println("not a correct stirng");
                         runOnUiThread(new Runnable() {
                             @Override
@@ -350,10 +336,10 @@ public class MainActivity extends AppCompatActivity {
 
                                     ((TextView)findViewById(R.id.tvStatus)).setText(
                                             ((TextView) findViewById(R.id.tvStatus)).getText() +
-                                                    (data.get("nume")).toString().replace("\"", "") + "  "
-                                                    + (data.get("prenume")).toString().replace("\"", "")
+                                                    (data.get("id")).toString().replace("\"", "") + "  "
+                                                    + (data.get("water_level")).toString().replace("\"", "")
                                                     + ": "
-                                                    + (data.get("varsta")).toString().replace("\"", "")
+                                                    + (data.get("temperature")).toString().replace("\"", "")
                                                     + "\n"
                                     );
                                 }
@@ -365,7 +351,98 @@ public class MainActivity extends AppCompatActivity {
                 this.exception = e;
                 e.printStackTrace();
             } finally {
-                System.out.println("reached the end :////");
+                System.out.println("reached the end :D");
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute() {
+            // TODO: check this.exception
+            // TODO: do something with the feed
+            try {
+                URL url = new URL(BASE_URL);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json");
+
+                // Send the request body
+                String requestBody = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+                OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+                writer.write(requestBody);
+                writer.flush();
+                writer.close();
+
+                // Get the response
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // Process the response body
+                }
+                connection.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(this.exception);
+        }
+
+    }
+    class PostReq extends AsyncTask<String, Void, Void> {
+
+        private Exception exception;
+
+        @SuppressLint("SetTextI18n")
+        protected Void doInBackground(String... urls) {
+            try {
+                String url = "https://80.97.250.38:55443/oxygenie/test2.php";
+                URL object= new URL(url);
+
+                HttpURLConnection con = (HttpURLConnection) object.openConnection();
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setRequestProperty("Accept", "application/json");
+                con.setRequestMethod("POST");
+
+                JSONObject params   = new JSONObject();
+
+                params.put("leds_intensity", 1);
+                params.put("water_level", 1);
+                params.put("temperature", 1);
+                params.put("moist", 1);
+                params.put("sunlight", 1);
+                params.put("pump_1", 1);
+                params.put("pump_2", 1);
+                params.put("pump_3", 1);
+                params.put("pump_4", 1);
+
+                OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
+                wr.write(params.toString());
+                wr.flush();
+
+                //display what returns the POST request
+                StringBuilder sb = new StringBuilder();
+                int HttpsResult = con.getResponseCode();
+                if (HttpsResult == HttpURLConnection.HTTP_OK) {
+                    BufferedReader br = new BufferedReader(
+                            new InputStreamReader(con.getInputStream(), "utf-8"));
+
+                    String line = null;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line + "\n");
+                    }
+
+                    br.close();
+                    System.out.println("" + sb.toString());
+                } else {
+                    System.out.println(con.getResponseMessage());
+                }
+            } catch (Exception e) {
+                this.exception = e;
+                e.printStackTrace();
+            } finally {
+                System.out.println("reached the end :D");
             }
 
             return null;
@@ -379,6 +456,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 
 //    private class ConnectionTask extends AsyncTask<String, Void, String> {
 //        @Override
