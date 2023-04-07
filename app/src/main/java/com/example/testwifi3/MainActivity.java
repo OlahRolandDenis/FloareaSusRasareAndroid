@@ -52,6 +52,10 @@ import javax.net.ssl.X509TrustManager;
 
 public class MainActivity extends AppCompatActivity {
 
+    String URL_INSERT_PARAMS = "https://80.97.250.38:55443/oxygenie/test2.php";
+    String URL_INSERT_COMMAND = "https://80.97.250.38:55443/oxygenie/commands.php?opt=command";
+    String URL_DELETE_COMMAND = "https://80.97.250.38:55443/oxygenie/delete_command.php?opt=delete_command";
+
     String IP_ADDRESS;
 
     View bgTransparentView;
@@ -178,8 +182,16 @@ public class MainActivity extends AppCompatActivity {
             bgTransparentView.setAlpha(0.0f);
         });
 
+        ((Button)findViewById(R.id.btnInsertParams)).setOnClickListener(v->{
+            new PostReq().execute(URL_INSERT_PARAMS);
+        });
+
         ((Button)findViewById(R.id.btnSendReq)).setOnClickListener(v->{
-            new PostReq().execute();
+            new PostReq().execute(URL_INSERT_COMMAND);
+        });
+
+        ((Button)findViewById(R.id.btnDeleteCommand)).setOnClickListener(v->{
+            new PostReq().execute(URL_DELETE_COMMAND);
         });
 
         Set<String> ipAddressesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
@@ -395,7 +407,8 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... urls) {
             try {
-                String url = "https://80.97.250.38:55443/oxygenie/test2.php";
+                ///String url = "https://80.97.250.38:55443/oxygenie/test2.php";
+                String url = urls[0];
                 URL object= new URL(url);
 
                 HttpURLConnection con = (HttpURLConnection) object.openConnection();
@@ -407,15 +420,22 @@ public class MainActivity extends AppCompatActivity {
 
                 JSONObject params   = new JSONObject();
 
-                params.put("leds_intensity", 1);
-                params.put("water_level", 1);
-                params.put("temperature", 1);
-                params.put("moist", 1);
-                params.put("sunlight", 1);
-                params.put("pump_1", 1);
-                params.put("pump_2", 1);
-                params.put("pump_3", 1);
-                params.put("pump_4", 1);
+                if ( url == URL_INSERT_COMMAND ){
+                    params.put("parameter_name", "temperature");
+                    params.put("value", 1234);
+                }
+
+                if ( url == URL_INSERT_PARAMS ) {
+                    params.put("leds_intensity", 1);
+                    params.put("water_level", 1);
+                    params.put("temperature", 1);
+                    params.put("moist", 1);
+                    params.put("sunlight", 1);
+                    params.put("pump_1", 1);
+                    params.put("pump_2", 1);
+                    params.put("pump_3", 1);
+                    params.put("pump_4", 1);
+                }
 
                 OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
                 wr.write(params.toString());

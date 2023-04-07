@@ -522,16 +522,39 @@
         />
 
     <Button
+        android:id="@+id/btnInsertParams"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:text="ins com"
+        app:layout_constraintBottom_toBottomOf="parent"
+
+        app:layout_constraintEnd_toStartOf="@+id/btnSendReq"
+
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
         android:id="@+id/btnSendReq"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
 
+        android:text="ins par"
+        android:layout_marginLeft="100dp"
         app:layout_constraintBottom_toBottomOf="parent"
+
+        app:layout_constraintEnd_toStartOf="@+id/btnDeleteCommand"
+
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/btnDeleteCommand"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:text="delete"
+        app:layout_constraintBottom_toBottomOf="parent"
+
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-
-        android:text="send req"
-
         />
 
     <TextView
