@@ -122,17 +122,17 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.bgTransparentView).setAlpha(0.0f);
         });
 
-//        waterCV.setOnClickListener(v -> {
-//            pumpControlCV.setVisibility(CardView.VISIBLE);
-//            pumpControlCV.setAlpha(1.0f);
-//            bgTransparentView.setAlpha(0.5f);
-//        });
-//
-//        pumpControlCV.findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
-//            pumpControlCV.setAlpha(0.0f);
-//            pumpControlCV.setVisibility(CardView.INVISIBLE);
-//            bgTransparentView.setAlpha(0.0f);
-//        });
+        findViewById(R.id.waterCV).setOnClickListener(v -> {
+            findViewById(R.id.pumpsControlCV).setVisibility(CardView.VISIBLE);
+            findViewById(R.id.pumpsControlCV).setAlpha(1.0f);
+            findViewById(R.id.bgTransparentView).setAlpha(0.5f);
+        });
+
+        findViewById(R.id.pumpsControlCV).findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
+            findViewById(R.id.pumpsControlCV).setAlpha(0.0f);
+            findViewById(R.id.pumpsControlCV).setVisibility(CardView.INVISIBLE);
+            findViewById(R.id.bgTransparentView).setAlpha(0.0f);
+        });
 
     }
 
