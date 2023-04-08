@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @SuppressLint("ResourceAsColor")
-    private void updateUI(String[] params_db) {
+    private void updateParamValues(String[] params_db) {
         for ( int i = 0; i < params_db.length; i++ ){
             String param_to_update = params_db[i].toString();
             String param_value = plant_data.get(param_to_update).toString();
@@ -163,7 +163,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     class ConnectionTask extends AsyncTask<String, Void, Void> {
 
         private Exception exception;
@@ -178,8 +177,6 @@ public class MainActivity extends AppCompatActivity {
 
                 int response_code = conn.getResponseCode();
                 if ( response_code != 200 ) {
-
-                    System.out.println("not 200 upsi");
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -193,10 +190,7 @@ public class MainActivity extends AppCompatActivity {
 
                     throw new RuntimeException("HttpResponseCode: " + response_code);
                 } else {
-                    System.out.println("connection secure!!!");
-
                     runOnUiThread(new Runnable() {
-
                         @Override
                         public void run() {
                             Toast.makeText(
@@ -223,21 +217,9 @@ public class MainActivity extends AppCompatActivity {
 
                     if ( informationString.charAt(0) != '[' ) {
                         System.out.println("not a correct stirng");
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-//                                ((TextView)findViewById(R.id.tvStatus)).setText(
-//                                        "connected to server \n but cannot retrieve JSON :)"
-//                                );
-                            }
-                        });
                     } else {
                         JsonParser parse = new JsonParser();
                         JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
-
-                        System.out.println("DATA OBJ: " + dataObject);
-                        System.out.println("DATA OBJ LENGTH: " + dataObject.size());
-                        System.out.println("FIRST ELM: " + dataObject.get(0));
 
                         plant_data = (JsonObject) dataObject.get(0);
 
@@ -245,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                updateUI(params_db);
+                                updateParamValues(params_db);
                             }
                         });
                     }
@@ -269,13 +251,6 @@ public class MainActivity extends AppCompatActivity {
 
             return null;
         }
-
-        protected void onPostExecute(Result result) {
-            // TODO: check this.exception
-            // TODO: do something with the feed
-            System.out.println(this.exception);
-        }
-
     }
 
     class GetReqTask extends AsyncTask<String, Void, Void> {
@@ -344,16 +319,13 @@ public class MainActivity extends AppCompatActivity {
                         JsonParser parse = new JsonParser();
                         JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
 
-                        System.out.println("DATA OBJ: " + dataObject);
-                        System.out.println("FIRST ELM: " + dataObject.get(0));
-
                         plant_data = (JsonObject) dataObject.get(0);
 
                         // UPDATE THE UI
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                updateUI(params_db);
+                                updateParamValues(params_db);
                             }
                         });
                     }
@@ -377,13 +349,6 @@ public class MainActivity extends AppCompatActivity {
 
             return null;
         }
-
-        protected void onPostExecute(Result result) {
-            // TODO: check this.exception
-            // TODO: do something with the feed
-            System.out.println(this.exception);
-        }
-
     }
 
     class PostCommandReqTask extends AsyncTask<String, Void, Void> {
