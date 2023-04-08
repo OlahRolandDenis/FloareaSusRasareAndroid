@@ -2,6 +2,7 @@ package com.example.testwifi3;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.Slider;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -53,17 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout paramsLayout;
     ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
-    String[] params_db = {
-            "leds_intensity",
-            "water_level",
-            "temperature",
-            "moist",
-            "sunlight",
-            "pump_1",
-            "pump_2",
-            "pump_3",
-            "pump_4"
-    };
+    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight", "pump_1", "pump_2", "pump_3", "pump_4" };
 
     JsonObject plant_data;
 
@@ -72,9 +64,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        NukeSSLCerts.nuke();
+        NukeSSLCerts.nuke();    // accept all kind of certificates
 
-        new ConnectionTask().execute(); // connect to server
+        new ConnectionTask().execute(); // connect to server and get plant data
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
 
@@ -95,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
         settings = ( UserSettings ) getApplication();
 
         ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
-            new GetReq().execute();
+            new GetReqTask().execute();
         });
 
         findViewById(R.id.ledCV).setOnClickListener( v-> {
@@ -104,12 +96,14 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.ledControlCV).setAlpha(1.0f);
         });
 
-        findViewById(R.id.btnLedON).setOnClickListener(v -> {
-           // new SendCommandTask().execute("LED_ON");
+        ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
+            System.out.println("this is on click");
+            new PostCommandReqTask().execute("leds_intensity", "100");
         });
 
-        findViewById(R.id.btnLedON).setOnClickListener(v -> {
-           // new SendCommandTask().execute("LED_OFF");
+        ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> {
+            System.out.println("this is on click");
+            new PostCommandReqTask().execute("leds_intensity", "0");
         });
 
         ((Slider)findViewById(R.id.ledSlider)).addOnChangeListener((slider, value, fromUser) -> {
@@ -142,51 +136,33 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void loadSpinner() {
-        findViewById(R.id.progressbar).setVisibility(View.VISIBLE);
-        paramsLayout.setVisibility(View.INVISIBLE);
-    }
+    @SuppressLint("ResourceAsColor")
+    private void updateUI(String[] params_db) {
+        for ( int i = 0; i < params_db.length; i++ ){
+            String param_to_update = params_db[i].toString();
+            String param_value = plant_data.get(param_to_update).toString();
+            System.out.println("THIS IS WHAT YOU ARE LOOKING FOR: " + param_to_update + ": " + param_value);
 
-    private void hideSpinner() {
-        paramsLayout.setVisibility(View.VISIBLE);
-        findViewById(R.id.progressbar).setVisibility(View.GONE);
-    }
+            if ( (param_to_update == "pump_1" || param_to_update == "pump_2" || param_to_update == "pump_3" || param_to_update == "pump_4") ) {
+                if ( param_value == "0" || Integer.parseInt(param_value) == 0 ) {
+                    ((TextView) paramsValuesViewsList.get(i))
+                            .setText("OFF");
 
-    public static class NukeSSLCerts {
-        protected static final String TAG = "NukeSSLCerts";
+                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor("#DC143C"));
+                } else {
+                    ((TextView) paramsValuesViewsList.get(i))
+                            .setText("ON");
 
-        public static void nuke() {
-            try {
-                TrustManager[] trustAllCerts = new TrustManager[]{
-                        new X509TrustManager() {
-                            public X509Certificate[] getAcceptedIssuers() {
-                                X509Certificate[] myTrustedAnchors = new X509Certificate[0];
-                                return myTrustedAnchors;
-                            }
-
-                            @Override
-                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                            }
-
-                            @Override
-                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                            }
-                        }
-                };
-
-                SSLContext sc = SSLContext.getInstance("SSL");
-                sc.init(null, trustAllCerts, new SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-                HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-                    @Override
-                    public boolean verify(String arg0, SSLSession arg1) {
-                        return true;
-                    }
-                });
-            } catch (Exception e) {
+                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor("#50C878"));
+                }
+            } else {
+                ((TextView) paramsValuesViewsList.get(i))
+                        .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
             }
+
         }
-    }//NukeSSLCerts
+    }
+
 
     class ConnectionTask extends AsyncTask<String, Void, Void> {
 
@@ -269,10 +245,7 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                for ( int i = 0; i < params_db.length; i++ ){
-                                    ((TextView) paramsValuesViewsList.get(i))
-                                            .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
-                                }
+                                updateUI(params_db);
                             }
                         });
                     }
@@ -305,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    class GetReq extends AsyncTask<String, Void, Void> {
+    class GetReqTask extends AsyncTask<String, Void, Void> {
 
         private Exception exception;
         @SuppressLint("SetTextI18n")
@@ -380,10 +353,7 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                for ( int i = 0; i < params_db.length; i++ ){
-                                    ((TextView) paramsValuesViewsList.get(i))
-                                            .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
-                                }
+                                updateUI(params_db);
                             }
                         });
                     }
@@ -416,16 +386,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    class PostReq extends AsyncTask<String, Void, Void> {
-
+    class PostCommandReqTask extends AsyncTask<String, Void, Void> {
         private Exception exception;
 
         @SuppressLint("SetTextI18n")
-        protected Void doInBackground(String... urls) {
+        protected Void doInBackground(String... command) {
+            System.out.println("this is at beggingingf");
             try {
-                String url = urls[0];
+                String url = URL_GLOBAL + URL_SEND_COMMAND;
                 URL object = new URL(url);
-
                 HttpURLConnection con = (HttpURLConnection) object.openConnection();
                 con.setDoOutput(true);
                 con.setDoInput(true);
@@ -435,9 +404,13 @@ public class MainActivity extends AppCompatActivity {
 
                 JSONObject params = new JSONObject();
 
-                if ( url == URL_GLOBAL + URL_SEND_COMMAND ){
-                    params.put("parameter_name", "pump_1");
-                    params.put("value", 1);
+                System.out.println("this is before the if");
+
+                if ( url.equals(URL_GLOBAL + URL_SEND_COMMAND) ){
+                    System.out.println("now i am assigning param");
+
+                    params.put("parameter_name", command[0]);
+                    params.put("value", Integer.parseInt(command[1]));
                 }
 
                 OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
@@ -477,6 +450,41 @@ public class MainActivity extends AppCompatActivity {
 
             System.out.println(this.exception);
         }
-
     }
+
+    public static class NukeSSLCerts {
+        protected static final String TAG = "NukeSSLCerts";
+
+        public static void nuke() {
+            try {
+                TrustManager[] trustAllCerts = new TrustManager[]{
+                        new X509TrustManager() {
+                            public X509Certificate[] getAcceptedIssuers() {
+                                X509Certificate[] myTrustedAnchors = new X509Certificate[0];
+                                return myTrustedAnchors;
+                            }
+
+                            @Override
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                            }
+
+                            @Override
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                            }
+                        }
+                };
+
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, trustAllCerts, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String arg0, SSLSession arg1) {
+                        return true;
+                    }
+                });
+            } catch (Exception e) {
+            }
+        }
+    }//NukeSSLCerts
 }

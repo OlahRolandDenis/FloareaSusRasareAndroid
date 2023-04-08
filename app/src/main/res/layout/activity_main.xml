@@ -312,7 +312,7 @@
                         android:id="@+id/lblPUMP1Param"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pump 2"
+                        android:text="Pump 1"
                         android:textColor="@color/black"
                         android:textSize="20sp"
                         android:textStyle="bold"
