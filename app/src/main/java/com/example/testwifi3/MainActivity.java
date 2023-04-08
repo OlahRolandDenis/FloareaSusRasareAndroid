@@ -7,18 +7,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.Slider;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -54,20 +51,21 @@ public class MainActivity extends AppCompatActivity {
     private static final String URL_GET_PLANT_DATA = "/oxygenie/get_plant_data.php";
     private static final String URL_SEND_COMMAND = "/oxygenie/send_command.php";
 
-    private Toolbar toolbar;
-    private ImageView btnRefresh;
     private LinearLayout paramsLayout;
-    private CardView humidityCV, waterCV, oxygenCV, ledCV, ledControlCV, pumpControlCV;
-
-    private MaterialButton btnLedOn, btnLedOff;
-    private Slider ledSlider;
-
-    private EditText inputMilisWater;
-    private Spinner spinnerPumps;
-
-    private View bgTransparentView;
-
     ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
+    String[] params_db = {
+            "leds_intensity",
+            "water_level",
+            "temperature",
+            "moist",
+            "sunlight",
+            "pump_1",
+            "pump_2",
+            "pump_3",
+            "pump_4"
+    };
+
+    JsonObject plant_data;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,12 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
         NukeSSLCerts.nuke();
 
-        new ConnectionTask().execute();
-
-        toolbar = (Toolbar) findViewById(R.id.myToolBar);
-        setSupportActionBar( toolbar );
-
-        btnRefresh = (ImageView) findViewById(R.id.btnRefresh);
+        new ConnectionTask().execute(); // connect to server
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
 
@@ -95,53 +88,38 @@ public class MainActivity extends AppCompatActivity {
         paramsValuesViewsList.add(findViewById(R.id.textPUMP3Value));
         paramsValuesViewsList.add(findViewById(R.id.textPUMP4Value));
 
-        spinnerPumps = findViewById(R.id.spinnerPumps);
         ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
         spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
-        spinnerPumps.setAdapter(spinner_adapter);
-
-        inputMilisWater = findViewById(R.id.inputMilisWater);
-
-        bgTransparentView = (View) findViewById(R.id.bgTransparentView);
-
-        ledControlCV = (CardView) findViewById(R.id.ledControlCV);
-        pumpControlCV = (CardView) findViewById(R.id.pumpsControlCV);
-
-        btnLedOn = findViewById(R.id.btnLedON);
-        btnLedOff = findViewById(R.id.btnLedOFF);
-        ledSlider = findViewById(R.id.ledSlider);
+        ((Spinner)findViewById(R.id.spinnerPumps)).setAdapter(spinner_adapter);
 
         settings = ( UserSettings ) getApplication();
 
-
-        if ( settings.isIs_connected_to_device() ) {
-            paramsLayout.setVisibility(LinearLayout.VISIBLE);
-            paramsLayout.animate().alpha(1.0f);
-            btnRefresh.setVisibility(ImageButton.VISIBLE);
-        }
-
-        findViewById(R.id.ledCV).setOnClickListener( v-> {
-            bgTransparentView.setAlpha(0.5f);
-            ledControlCV.setVisibility(CardView.VISIBLE);
-            ledControlCV.setAlpha(1.0f);
+        ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
+            new GetReq().execute();
         });
 
-        btnLedOn.setOnClickListener(v -> {
+        findViewById(R.id.ledCV).setOnClickListener( v-> {
+            findViewById(R.id.bgTransparentView).setAlpha(0.5f);
+            findViewById(R.id.ledControlCV).setVisibility(CardView.VISIBLE);
+            findViewById(R.id.ledControlCV).setAlpha(1.0f);
+        });
+
+        findViewById(R.id.btnLedON).setOnClickListener(v -> {
            // new SendCommandTask().execute("LED_ON");
         });
 
-        btnLedOff.setOnClickListener(v -> {
+        findViewById(R.id.btnLedON).setOnClickListener(v -> {
            // new SendCommandTask().execute("LED_OFF");
         });
 
-        ledSlider.addOnChangeListener((slider, value, fromUser) -> {
+        ((Slider)findViewById(R.id.ledSlider)).addOnChangeListener((slider, value, fromUser) -> {
             // new SendCommandTask().execute("*" + value);
         });
 
-        ledControlCV.findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
-            ledControlCV.setAlpha(0.0f);
-            ledControlCV.setVisibility(CardView.INVISIBLE);
-            bgTransparentView.setAlpha(0.0f);
+        findViewById(R.id.ledControlCV).findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
+            findViewById(R.id.ledControlCV).setAlpha(0.0f);
+            findViewById(R.id.ledControlCV).setVisibility(CardView.INVISIBLE);
+            findViewById(R.id.bgTransparentView).setAlpha(0.0f);
         });
 
 //        waterCV.setOnClickListener(v -> {
@@ -162,6 +140,16 @@ public class MainActivity extends AppCompatActivity {
         Log.d("NAVIGATE", "click to navigate to settings :D");
         Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
         startActivity(intent);
+    }
+
+    private void loadSpinner() {
+        findViewById(R.id.progressbar).setVisibility(View.VISIBLE);
+        paramsLayout.setVisibility(View.INVISIBLE);
+    }
+
+    private void hideSpinner() {
+        paramsLayout.setVisibility(View.VISIBLE);
+        findViewById(R.id.progressbar).setVisibility(View.GONE);
     }
 
     public static class NukeSSLCerts {
@@ -214,6 +202,19 @@ public class MainActivity extends AppCompatActivity {
 
                 int response_code = conn.getResponseCode();
                 if ( response_code != 200 ) {
+
+                    System.out.println("not 200 upsi");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "Could not connect to server:(",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                        }
+                    });
+
                     throw new RuntimeException("HttpResponseCode: " + response_code);
                 } else {
                     System.out.println("connection secure!!!");
@@ -222,8 +223,16 @@ public class MainActivity extends AppCompatActivity {
 
                         @Override
                         public void run() {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "connected to server <3",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+
                             paramsLayout.setVisibility(View.VISIBLE);
                             paramsLayout.setAlpha(1.0f);
+
+                            findViewById(R.id.btnRefresh).setVisibility(View.VISIBLE);
                         }
                     });
 
@@ -254,19 +263,7 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println("DATA OBJ LENGTH: " + dataObject.size());
                         System.out.println("FIRST ELM: " + dataObject.get(0));
 
-                        JsonObject data = (JsonObject) dataObject.get(0);
-
-                        String[] params_db = {
-                                "leds_intensity",
-                                "water_level",
-                                "temperature",
-                                "moist",
-                                "sunlight",
-                                "pump_1",
-                                "pump_2",
-                                "pump_3",
-                                "pump_4"
-                        };
+                        plant_data = (JsonObject) dataObject.get(0);
 
                         // UPDATE THE UI
                         runOnUiThread(new Runnable() {
@@ -274,13 +271,23 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 for ( int i = 0; i < params_db.length; i++ ){
                                     ((TextView) paramsValuesViewsList.get(i))
-                                            .setText((data.get(params_db[i])).toString().replace("\"", ""));
+                                            .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
                                 }
                             }
                         });
                     }
                 }
             } catch (Exception e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Could not connect to server:(",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                });
                 this.exception = e;
                 e.printStackTrace();
             } finally {
@@ -297,6 +304,118 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+    class GetReq extends AsyncTask<String, Void, Void> {
+
+        private Exception exception;
+        @SuppressLint("SetTextI18n")
+        protected Void doInBackground(String... urls) {
+            try {
+                URL url = new URL(URL_GLOBAL + URL_GET_PLANT_DATA );
+
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
+
+                int response_code = conn.getResponseCode();
+                if ( response_code != 200 ) {
+
+                    System.out.println("not 200 upsi");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "Could not connect to server:(",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                        }
+                    });
+
+                    throw new RuntimeException("HttpResponseCode: " + response_code);
+                } else {
+                    System.out.println("got the DATA <3 !!!");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "got the data <3",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        }
+                    });
+
+                    StringBuilder informationString  = new StringBuilder();
+                    Scanner scanner = new Scanner(url.openStream());
+
+                    while ( scanner.hasNext() ) {
+                        informationString.append(scanner.nextLine());
+                    }
+
+                    scanner.close();
+
+                    if ( informationString.charAt(0) != '[' ) {
+                        System.out.println("not a correct string");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(
+                                        MainActivity.this,
+                                        "cannot retrieve json :/",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                            }
+                        });
+                    } else {
+                        JsonParser parse = new JsonParser();
+                        JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
+
+                        System.out.println("DATA OBJ: " + dataObject);
+                        System.out.println("FIRST ELM: " + dataObject.get(0));
+
+                        plant_data = (JsonObject) dataObject.get(0);
+
+                        // UPDATE THE UI
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                for ( int i = 0; i < params_db.length; i++ ){
+                                    ((TextView) paramsValuesViewsList.get(i))
+                                            .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Could not connect to server:(",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                });
+                this.exception = e;
+                e.printStackTrace();
+            } finally {
+                System.out.println("reached the end :D");
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(Result result) {
+            // TODO: check this.exception
+            // TODO: do something with the feed
+            System.out.println(this.exception);
+        }
+
+    }
+
     class PostReq extends AsyncTask<String, Void, Void> {
 
         private Exception exception;
@@ -314,7 +433,7 @@ public class MainActivity extends AppCompatActivity {
                 con.setRequestProperty("Accept", "application/json");
                 con.setRequestMethod("POST");
 
-                JSONObject params   = new JSONObject();
+                JSONObject params = new JSONObject();
 
                 if ( url == URL_GLOBAL + URL_SEND_COMMAND ){
                     params.put("parameter_name", "pump_1");
