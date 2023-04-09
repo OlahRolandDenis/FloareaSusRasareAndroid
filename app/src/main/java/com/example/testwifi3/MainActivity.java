@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         settings = ( UserSettings ) getApplication();
 
         ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
-            new GetReqTask().execute();
+            new GetParamsTask().execute();
         });
 
         findViewById(R.id.ledCV).setOnClickListener( v-> {
@@ -202,8 +202,80 @@ public class MainActivity extends AppCompatActivity {
                     ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor("#50C878"));
                 }
             } else {
+                String str_value = (plant_data.get(params_db[i])).toString().replace("\"", "");
+                int int_value = Integer.parseInt(str_value);
+                String status_color = "#000000";
+
+                switch ( param_to_update ){
+                    case "moist":
+                        //value = (plant_data.get(params_db[i])).toString().replace("\"", "");
+
+                        if ( int_value == 0 ){
+                            str_value = "NEEDS WATER";
+                            status_color = "#DC143C";
+                        } else {
+                            str_value = "OK";
+                            status_color = "#50C878";
+                        }
+
+                        break;
+
+                    case "water_level":
+                        if ( int_value < 10 ){
+                            str_value = "EMPTY";
+                            status_color = "#DC143C";
+                        } else if ( int_value < 30 ){
+                            str_value = "ALMOST EMPTY";
+                            status_color = "#DC143C";
+                        } else if ( int_value < 75 ) {
+                            str_value = "OK";
+                            status_color = "#94690D";
+                        } else {
+                            str_value = "FULL";
+                            status_color = "#50C878";
+                        }
+
+                        break;
+
+                    case "temperature":
+
+
+                        break;
+
+                    case "sunlight":
+                        if ( int_value == 0 ) {
+                            str_value = "NOT ENOUGH";
+                            status_color = "#DC143C";
+                        } else {
+                            str_value = "ENOUGH";
+                            status_color = "#50C878";
+                        }
+
+                        break;
+
+                    case "leds_intensity":
+                        if ( int_value == 0 ) {
+                            str_value = "OFF";
+                            status_color = "#DC143C";   // red
+                        } else if ( int_value == 100 ){
+                            status_color = "#50C878";   // green
+                        } else {
+                            status_color = "#94690D"; // yellow
+                        }
+                        break;
+
+                    default:
+                        ((TextView) paramsValuesViewsList.get(i))
+                                .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
+                        status_color = "#94690D";
+                        break;
+                }
+
                 ((TextView) paramsValuesViewsList.get(i))
-                        .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
+                        .setText(str_value);
+
+                if ( status_color != "" )
+                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor(status_color));
             }
 
         }
@@ -299,7 +371,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class GetReqTask extends AsyncTask<String, Void, Void> {
+    class GetParamsTask extends AsyncTask<String, Void, Void> {
 
         private Exception exception;
         @SuppressLint("SetTextI18n")
