@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -35,6 +36,8 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -46,9 +49,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public class MainActivity extends AppCompatActivity {
-
-    private UserSettings settings;
-
     private static final String URL_LOCAL = "https://192.168.4.210";
     private static final String URL_GLOBAL = "https://80.97.250.38:55443";
 
@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         NukeSSLCerts.nuke();    // accept all kind of certificates
+        setRepeatingAsyncTask();
 
         new ConnectionTask().execute(); // connect to server and get plant data
 
@@ -85,8 +86,6 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
         spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
         ((Spinner)findViewById(R.id.spinnerPumps)).setAdapter(spinner_adapter);
-
-        settings = ( UserSettings ) getApplication();
 
         ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
             new GetParamsTask().execute();
@@ -281,6 +280,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setRepeatingAsyncTask() {
+
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
+
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            GetParamsTask task = new GetParamsTask();
+                            task.execute();
+                        } catch (Exception e) {
+                            // error, do something
+                        }
+                    }
+                });
+            }
+        };
+
+        timer.schedule(task, 0, 60*1000);  // interval of one minute
+
+    }
+
     class ConnectionTask extends AsyncTask<String, Void, Void> {
 
         private Exception exception;
@@ -401,16 +425,6 @@ public class MainActivity extends AppCompatActivity {
                     throw new RuntimeException("HttpResponseCode: " + response_code);
                 } else {
                     System.out.println("got the DATA <3 !!!");
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(
-                                    MainActivity.this,
-                                    "got the data <3",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-                        }
-                    });
 
                     StringBuilder informationString  = new StringBuilder();
                     Scanner scanner = new Scanner(url.openStream());
