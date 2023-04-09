@@ -54,24 +54,22 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingVertical="70dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView2"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbarControlLayout">
 
-        android:paddingVertical="100dp"
-        >
         <LinearLayout
             android:id="@+id/paramsLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
 
-            android:orientation="vertical"
-
-            android:visibility="invisible"
             android:alpha="0.0"
+
             android:animateLayoutChanges="true"
-            >
+            android:orientation="vertical"
+            android:visibility="invisible">
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/moistCV"
@@ -334,6 +332,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
+
             <androidx.cardview.widget.CardView
                 android:id="@+id/pump2CV"
                 android:layout_width="match_parent"
@@ -376,6 +375,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
+
             <androidx.cardview.widget.CardView
                 android:id="@+id/pump3CV"
                 android:layout_width="match_parent"
@@ -418,6 +418,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
+
             <androidx.cardview.widget.CardView
                 android:id="@+id/pump4CV"
                 android:layout_width="match_parent"

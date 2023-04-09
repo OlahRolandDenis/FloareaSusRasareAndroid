@@ -67,7 +67,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         NukeSSLCerts.nuke();    // accept all kind of certificates
-        setRepeatingAsyncTask();
+        
+        setRepeatingAsyncTask();    // update param values every minute
 
         new ConnectionTask().execute(); // connect to server and get plant data
 
