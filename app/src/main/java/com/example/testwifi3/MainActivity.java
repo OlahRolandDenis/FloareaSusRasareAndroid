@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -34,6 +35,8 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -41,7 +44,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.xml.transform.Result;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -91,9 +93,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.ledCV).setOnClickListener( v-> {
+            findViewById(R.id.bgTransparentView).setVisibility(View.VISIBLE);
             findViewById(R.id.bgTransparentView).setAlpha(0.5f);
             findViewById(R.id.ledControlCV).setVisibility(CardView.VISIBLE);
             findViewById(R.id.ledControlCV).setAlpha(1.0f);
+
+            if ( checkExistingCommand() ) {
+                System.out.println("checkexistingcommand() ran: command already running");
+            } else {
+                System.out.println("checkexistingcommand() ran: all good :)");
+            }
         });
 
         ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
@@ -127,6 +136,43 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.pumpsControlCV).setVisibility(CardView.INVISIBLE);
             findViewById(R.id.bgTransparentView).setAlpha(0.0f);
         });
+
+    }
+
+    private Boolean checkExistingCommand() {
+        Boolean command_already_running;
+        try {
+            command_already_running = new GetCommandTask().execute().get();
+
+            if ( !command_already_running ) {
+                setElements(true);  // // make then enabled
+                System.out.println("GOOD TO GO ( findview ) <3<3");
+            } else {
+                setElements(false); // make then disabled
+
+                Toast.makeText(MainActivity.this, "Another command is being executed. Please wait", Toast.LENGTH_LONG).show();
+
+                System.out.println("BAD TO GO ( findview )://");
+            }
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        return command_already_running;
+    }
+
+    private void setElements(boolean enabled) {
+        LinearLayout layout = ((LinearLayout)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(1));
+        final int childCount = layout.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View view = layout.getChildAt(i);
+            view.setEnabled(enabled);
+        }
+
+        Slider slider = (Slider)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(2);
+        slider.setEnabled(enabled);
 
     }
 
@@ -193,11 +239,11 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(
-                                    MainActivity.this,
-                                    "connected to server <3",
-                                    Toast.LENGTH_SHORT
-                            ).show();
+//                            Toast.makeText(
+//                                    MainActivity.this,
+//                                    "connected to server <3",
+//                                    Toast.LENGTH_SHORT
+//                            ).show();
 
                             paramsLayout.setVisibility(View.VISIBLE);
                             paramsLayout.setAlpha(1.0f);
@@ -351,12 +397,55 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    class GetCommandTask extends AsyncTask<String, Void, Boolean> {
+
+        Boolean command_being_executed = false;
+
+        protected Boolean doInBackground(String... urls) {
+            try {
+                URL url = new URL("https://80.97.250.38:55443/oxygenie/get_command.php" );
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
+
+                int response_code = conn.getResponseCode();
+                if ( response_code != 200 ) {
+                    System.out.println("not 200 upsi");
+                    throw new RuntimeException("HttpResponseCode: " + response_code);
+                } else {
+
+                    StringBuilder informationString  = new StringBuilder();
+                    Scanner scanner = new Scanner(url.openStream());
+
+                    while ( scanner.hasNext() ) {
+                        informationString.append(scanner.nextLine());
+                    }
+                    scanner.close();
+
+                    System.out.println("GET COMMAND STRING: " + informationString);
+
+                    if ( informationString.toString().equals("no command") ) {
+                        command_being_executed = false; // we are good to send command
+                    } else {
+                        command_being_executed = true;  // another command is being executed -> we have to wait
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                return command_being_executed;
+            }
+
+          //  return this.command_being_executed;
+        }
+    }
+
+
     class PostCommandReqTask extends AsyncTask<String, Void, Void> {
         private Exception exception;
 
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... command) {
-            System.out.println("this is at beggingingf");
             try {
                 String url = URL_GLOBAL + URL_SEND_COMMAND;
                 URL object = new URL(url);
@@ -389,21 +478,29 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader br = new BufferedReader(
                             new InputStreamReader(con.getInputStream(), "utf-8"));
 
+                    System.out.println("TRYING TO SEE WHICH ONE iS SQL");
                     String line = null;
                     while ((line = br.readLine()) != null) {
                         sb.append(line + "\n");
                     }
 
                     br.close();
-                    System.out.println("" + sb.toString());
                 } else {
+                    System.out.println("this is the else before catch");
                     System.out.println(con.getResponseMessage());
                 }
+
             } catch (Exception e) {
                 this.exception = e;
+                System.out.println("CANNOT SEND COMMAND");
                 e.printStackTrace();
             } finally {
                 System.out.println("reached the end :D");
+
+                findViewById(R.id.ledControlCV).setVisibility(View.INVISIBLE);
+
+                findViewById(R.id.bgTransparentView).setAlpha(0.0f);
+                findViewById(R.id.bgTransparentView).setVisibility(View.INVISIBLE);
             }
 
             return null;
