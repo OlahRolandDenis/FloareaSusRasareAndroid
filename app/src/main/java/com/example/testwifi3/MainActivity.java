@@ -67,8 +67,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         NukeSSLCerts.nuke();    // accept all kind of certificates
-        
-        setRepeatingAsyncTask();    // update param values every minute
+
+        setRepeatingAsyncTask("GetParamsTask", 60 * 1000);    // update param values every minute
 
         new ConnectionTask().execute(); // connect to server and get plant data
 
@@ -107,12 +107,28 @@ public class MainActivity extends AppCompatActivity {
 
         ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
             System.out.println("this is on click");
-            new PostCommandReqTask().execute("leds_intensity", "100");
+
+            if ( checkExistingCommand() ) {
+                System.out.println("checkexistingcommand() ran: command already running");
+            } else {
+                System.out.println("checkexistingcommand() ran: all good :)");
+                new PostCommandReqTask().execute("leds_intensity", "100");
+            }
+
+            setRepeatingAsyncTask("GetCommandTask", 2000);
         });
 
         ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> {
             System.out.println("this is on click");
-            new PostCommandReqTask().execute("leds_intensity", "0");
+
+            if ( checkExistingCommand() ) {
+                System.out.println("checkexistingcommand() ran: command already running");
+            } else {
+                System.out.println("checkexistingcommand() ran: all good :)");
+                new PostCommandReqTask().execute("leds_intensity", "0");
+            }
+
+            setRepeatingAsyncTask("GetCommandTask", 2000);
         });
 
         ((Slider)findViewById(R.id.ledSlider)).addOnChangeListener((slider, value, fromUser) -> {
@@ -150,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 setElements(false); // make then disabled
 
-                Toast.makeText(MainActivity.this, "Another command is being executed. Please wait", Toast.LENGTH_LONG).show();
+               // Toast.makeText(MainActivity.this, "Another command is being executed. Please wait", Toast.LENGTH_LONG).show();
 
                 System.out.println("BAD TO GO ( findview )://");
             }
@@ -281,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setRepeatingAsyncTask() {
+    private void setRepeatingAsyncTask(String task_class, int interval) {
 
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -292,8 +308,12 @@ public class MainActivity extends AppCompatActivity {
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            GetParamsTask task = new GetParamsTask();
-                            task.execute();
+                            if ( task_class == "GetParamsTask" ){
+                                GetParamsTask task_to_execute = new GetParamsTask();
+                                task_to_execute.execute();
+                            } else {
+                                checkExistingCommand();
+                            }
                         } catch (Exception e) {
                             // error, do something
                         }
@@ -302,8 +322,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        timer.schedule(task, 0, 60*1000);  // interval of one minute
-
+        timer.schedule(task, 0, interval);  // interval of one minute
     }
 
     class ConnectionTask extends AsyncTask<String, Void, Void> {
@@ -584,10 +603,10 @@ public class MainActivity extends AppCompatActivity {
             } finally {
                 System.out.println("reached the end :D");
 
-                findViewById(R.id.ledControlCV).setVisibility(View.INVISIBLE);
-
-                findViewById(R.id.bgTransparentView).setAlpha(0.0f);
-                findViewById(R.id.bgTransparentView).setVisibility(View.INVISIBLE);
+//                findViewById(R.id.ledControlCV).setVisibility(View.INVISIBLE);
+//
+//                findViewById(R.id.bgTransparentView).setAlpha(0.0f);
+//                findViewById(R.id.bgTransparentView).setVisibility(View.INVISIBLE);
             }
 
             return null;
