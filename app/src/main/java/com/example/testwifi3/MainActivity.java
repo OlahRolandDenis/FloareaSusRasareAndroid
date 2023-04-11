@@ -1,372 +1,658 @@
 package com.example.testwifi3;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.cardview.widget.CardView;
-import androidx.constraintlayout.helper.widget.Carousel;
-
+import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.os.Bundle;
-
+import android.graphics.Color;
 import android.os.AsyncTask;
-
-
-import android.os.Debug;
-import android.transition.Slide;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.Socket;
-
-import android.util.Log;
-
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Spinner;
-import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.slider.RangeSlider;
 import com.google.android.material.slider.Slider;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
-import org.w3c.dom.Text;
+import org.json.JSONObject;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
-import kotlinx.coroutines.MainCoroutineDispatcher;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String URL_LOCAL = "https://192.168.4.210";
+    private static final String URL_GLOBAL = "https://80.97.250.38:55443";
 
-    String IP_ADDRESS;
-
-    View bgTransparentView;
-
-    private Toolbar toolbar;
-    private Button btnConnect;
-    private ImageView btnRefresh;
+    private static final String URL_GET_PLANT_DATA = "/oxygenie/get_plant_data.php";
+    private static final String URL_SEND_COMMAND = "/oxygenie/send_command.php";
 
     private LinearLayout paramsLayout;
-    private CardView humidityCV, waterCV, oxygenCV, ledCV, ledControlCV, pumpControlCV;
-    private Spinner spinnerPumps;
+    ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
+    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight", "pump_1", "pump_2", "pump_3", "pump_4" };
 
-    private Slider ledSlider;
-
-    private MaterialButton btnLedOn, btnLedOff;
-    private EditText inputMilisWater;
-
-    Socket socket = null;
-    PrintWriter out = null;
-    BufferedReader in = null;
-
-    private UserSettings settings;
-
-    SharedPreferences sharedPreferences;
+    JsonObject plant_data;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        toolbar = (Toolbar) findViewById(R.id.myToolBar);
-        setSupportActionBar( toolbar );
+        NukeSSLCerts.nuke();    // accept all kind of certificates
 
-        sharedPreferences = getSharedPreferences(UserSettings.PREFERENCES, MODE_PRIVATE);
+        setRepeatingAsyncTask("GetParamsTask", 60 * 1000);    // update param values every minute
 
-        btnConnect = (Button) findViewById(R.id.btn_connect);
-        btnRefresh = (ImageView) findViewById(R.id.btnRefresh);
+        new ConnectionTask().execute(); // connect to server and get plant data
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
 
-        ledCV = findViewById(R.id.ledCV);
-        waterCV = findViewById(R.id.waterCV);
+        paramsValuesViewsList.add(findViewById(R.id.textLEDValue));
+        paramsValuesViewsList.add(findViewById(R.id.textWaterValue));
+        paramsValuesViewsList.add(findViewById(R.id.textTemperatureValue));
+        paramsValuesViewsList.add(findViewById(R.id.textMoistValue));
+        paramsValuesViewsList.add(findViewById(R.id.textSunlightValue));
+        paramsValuesViewsList.add(findViewById(R.id.textPUMP1Value));
+        paramsValuesViewsList.add(findViewById(R.id.textPUMP2Value));
+        paramsValuesViewsList.add(findViewById(R.id.textPUMP3Value));
+        paramsValuesViewsList.add(findViewById(R.id.textPUMP4Value));
 
-        spinnerPumps = findViewById(R.id.spinnerPumps);
         ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
         spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
-        spinnerPumps.setAdapter(spinner_adapter);
+        ((Spinner)findViewById(R.id.spinnerPumps)).setAdapter(spinner_adapter);
 
-        inputMilisWater = findViewById(R.id.inputMilisWater);
+        ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
+            new GetParamsTask().execute();
+        });
 
-        bgTransparentView = (View) findViewById(R.id.bgTransparentView);
+        findViewById(R.id.ledCV).setOnClickListener( v-> {
+            findViewById(R.id.bgTransparentView).setVisibility(View.VISIBLE);
+            findViewById(R.id.bgTransparentView).setAlpha(0.5f);
+            findViewById(R.id.ledControlCV).setVisibility(CardView.VISIBLE);
+            findViewById(R.id.ledControlCV).setAlpha(1.0f);
 
-        ledControlCV = (CardView) findViewById(R.id.ledControlCV);
-        pumpControlCV = (CardView) findViewById(R.id.pumpsControlCV);
-
-        btnLedOn = findViewById(R.id.btnLedON);
-        btnLedOff = findViewById(R.id.btnLedOFF);
-        ledSlider = findViewById(R.id.ledSlider);
-
-        settings = ( UserSettings ) getApplication();
-        IP_ADDRESS = settings.getIPAddress();
-
-
-
-        if ( settings.isIs_connected_to_device() ) {
-            paramsLayout.setVisibility(LinearLayout.VISIBLE);
-            paramsLayout.animate().alpha(1.0f);
-            btnRefresh.setVisibility(ImageButton.VISIBLE);
-        }
-
-
-        btnConnect.setOnClickListener(v -> {
-            if ( socket == null ) {
-                connectToDevice();
+            if ( checkExistingCommand() ) {
+                System.out.println("checkexistingcommand() ran: command already running");
             } else {
-                disconnectFromDevice();
-                btnConnect.setText("Connect");
+                System.out.println("checkexistingcommand() ran: all good :)");
             }
         });
 
-        ledCV.setOnClickListener(v->{
-            bgTransparentView.setAlpha(0.5f);
-            ledControlCV.setVisibility(CardView.VISIBLE);
-            ledControlCV.setAlpha(1.0f);
-        });
+        ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
+            System.out.println("this is on click");
 
-        btnLedOn.setOnClickListener(v -> {
-            new SendCommandTask().execute("LED_ON");
-        });
-
-        btnLedOff.setOnClickListener(v -> {
-            new SendCommandTask().execute("LED_OFF");
-        });
-
-        ledSlider.addOnChangeListener((slider, value, fromUser) -> {
-            new SendCommandTask().execute("*" + value);
-        });
-
-        ledControlCV.findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
-            ledControlCV.setAlpha(0.0f);
-            ledControlCV.setVisibility(CardView.INVISIBLE);
-            bgTransparentView.setAlpha(0.0f);
-        });
-
-        waterCV.setOnClickListener(v -> {
-            pumpControlCV.setVisibility(CardView.VISIBLE);
-            pumpControlCV.setAlpha(1.0f);
-            bgTransparentView.setAlpha(0.5f);
-        });
-
-        pumpControlCV.findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
-            pumpControlCV.setAlpha(0.0f);
-            pumpControlCV.setVisibility(CardView.INVISIBLE);
-            bgTransparentView.setAlpha(0.0f);
-        });
-
-        Set<String> ipAddressesSet = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
-        System.out.println("ipAddressesSet is: " + ipAddressesSet);
-
-        loadSharedPreferences();
-    }
-
-
-    private void loadSharedPreferences() {
-
-        String ip_address = sharedPreferences.getString(UserSettings.SELECTED_IP_ADDRESS, "no ip address");
-
-        settings.setIPAddress(ip_address);
-        IP_ADDRESS = ip_address;
-
-        Set<String> news = new HashSet<String>();
-        news = sharedPreferences.getStringSet("ALL_IP_ADDRESSES", null);
-        System.out.println(news);
-
-        updateView();
-    }
-
-    public void updateView() {
-        TextView ipAddressTextView = ( TextView ) findViewById(R.id.currentIPAddressTextView);
-        ipAddressTextView.setText("IP: " + settings.getIPAddress());
-    }
-
-    private void disconnectFromDevice() {
-        if ( in != null ) {
-            try {
-                in.close();
-            } catch (IOException e) {
-
+            if ( checkExistingCommand() ) {
+                System.out.println("checkexistingcommand() ran: command already running");
+            } else {
+                System.out.println("checkexistingcommand() ran: all good :)");
+                new PostCommandReqTask().execute("leds_intensity", "100");
             }
-        }
-        if ( out != null ) {
-            out.close();
-        }
-        if (socket != null) {
-            try {
-                socket.close();
-            } catch (IOException e) {
 
+            setRepeatingAsyncTask("GetCommandTask", 2000);
+        });
+
+        ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> {
+            System.out.println("this is on click");
+
+            if ( checkExistingCommand() ) {
+                System.out.println("checkexistingcommand() ran: command already running");
+            } else {
+                System.out.println("checkexistingcommand() ran: all good :)");
+                new PostCommandReqTask().execute("leds_intensity", "0");
             }
-        }
 
-        socket = null;
-        out = null;
-        in = null;
+            setRepeatingAsyncTask("GetCommandTask", 2000);
+        });
+
+        ((Slider)findViewById(R.id.ledSlider)).addOnChangeListener((slider, value, fromUser) -> {
+            // new SendCommandTask().execute("*" + value);
+        });
+
+        findViewById(R.id.ledControlCV).findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
+            findViewById(R.id.ledControlCV).setAlpha(0.0f);
+            findViewById(R.id.ledControlCV).setVisibility(CardView.INVISIBLE);
+            findViewById(R.id.bgTransparentView).setAlpha(0.0f);
+        });
+
+        findViewById(R.id.waterCV).setOnClickListener(v -> {
+            findViewById(R.id.pumpsControlCV).setVisibility(CardView.VISIBLE);
+            findViewById(R.id.pumpsControlCV).setAlpha(1.0f);
+            findViewById(R.id.bgTransparentView).setAlpha(0.5f);
+        });
+
+        findViewById(R.id.pumpsControlCV).findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
+            findViewById(R.id.pumpsControlCV).setAlpha(0.0f);
+            findViewById(R.id.pumpsControlCV).setVisibility(CardView.INVISIBLE);
+            findViewById(R.id.bgTransparentView).setAlpha(0.0f);
+        });
+
     }
 
-    private void connectToDevice() {
-        new ConnectionTask().execute();
-        Log.i( "ConnectionTask"," pornire connectare la Device");
+    private Boolean checkExistingCommand() {
+        Boolean command_already_running;
+
+        try {
+            System.out.println("I am running checkExistingCommand() !!");
+            command_already_running = new GetCommandTask().execute().get();
+
+            if ( !command_already_running ) {
+                setElements(true);  // // make then enabled
+                System.out.println("GOOD TO GO ( findview ) <3<3");
+            } else {
+                setElements(false); // make then disabled
+                System.out.println("BAD TO GO ( findview )://");
+            }
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        return command_already_running;
+    }
+
+    private void setElements(boolean enabled) {
+        LinearLayout layout = ((LinearLayout)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(1));
+        final int childCount = layout.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View view = layout.getChildAt(i);
+            view.setEnabled(enabled);
+        }
+
+        Slider slider = (Slider)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(2);
+        slider.setEnabled(enabled);
+
     }
 
     public void navigateToSettings( View view ) {
         Log.d("NAVIGATE", "click to navigate to settings :D");
-
         Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
         startActivity(intent);
     }
 
-    private class ConnectionTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... params) {
-            Log.d("ConnectionTask","doInBackground");
-            String response = null;
+    @SuppressLint("ResourceAsColor")
+    private void updateParamValues(String[] params_db) {
+        for ( int i = 0; i < params_db.length; i++ ){
+            String param_to_update = params_db[i].toString();
+            String param_value = plant_data.get(param_to_update).toString();
+            System.out.println("THIS IS WHAT YOU ARE LOOKING FOR: " + param_to_update + ": " + param_value);
 
-            try {
-                String IP_ADDRESS = UserSettings.SELECTED_IP_ADDRESS;// get selected ip address ( from settings )
-                String IP_PORT = UserSettings.SELECTED_IP_PORT;
+            if ( (param_to_update == "pump_1" || param_to_update == "pump_2" || param_to_update == "pump_3" || param_to_update == "pump_4") ) {
+                if ( param_value == "0" || Integer.parseInt(param_value) == 0 ) {
+                    ((TextView) paramsValuesViewsList.get(i))
+                            .setText("OFF");
 
-                // connect to ip address and the socket "assigned" to it
-                socket = new Socket(IP_ADDRESS, 80);
-                out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-                // give feedback that all is good
-                Log.d("ConnectionTask", "connected");
-                response = "ok";
-            } catch (Exception e) {
-                if ( IP_ADDRESS == "no ip address" || IP_ADDRESS == null )
-                    response = "NO_IP_ADDRESS";
-
-                Log.i( "TAG", e.toString());
-                e.printStackTrace();
-            }
-
-            return response;
-        }
-
-        @Override
-        protected void onPostExecute(String response) {
-            // Handle the response from the server here
-            if ( response == "NO_IP_ADDRESS" )
-                Toast.makeText(
-                        MainActivity.this,
-                        "PLEASE SELECT AN IP ADDRESS!",
-                        Toast.LENGTH_SHORT
-                ).show();
-            else {
-                paramsLayout.setVisibility(LinearLayout.VISIBLE);
-                paramsLayout.animate().alpha(1.0f);
-                btnRefresh.setVisibility(ImageButton.VISIBLE);
-
-                if (response == null) {
-                    Toast.makeText(
-                            MainActivity.this,
-                            "Could not connect to device 😞",
-                            Toast.LENGTH_SHORT
-                    ).show();
-
-
-                    settings.setIs_connected_to_device(true);
-
-                    Log.d("ConnectionTask", "could not connect to device");
-                    btnConnect.setText("Connect");
+                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor("#DC143C"));
                 } else {
-                    Toast.makeText(
-                            MainActivity.this,
-                            "Connected to device! 😄",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    ((TextView) paramsValuesViewsList.get(i))
+                            .setText("ON");
 
-                    Log.d("ConnectionTask", "Connected to device");
-                    btnConnect.setText("Disconect");
+                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor("#50C878"));
                 }
+            } else {
+                String str_value = (plant_data.get(params_db[i])).toString().replace("\"", "");
+                int int_value = Integer.parseInt(str_value);
+                String status_color = "#000000";
+
+                switch ( param_to_update ){
+                    case "moist":
+                        //value = (plant_data.get(params_db[i])).toString().replace("\"", "");
+
+                        if ( int_value == 0 ){
+                            str_value = "NEEDS WATER";
+                            status_color = "#DC143C";
+                        } else {
+                            str_value = "OK";
+                            status_color = "#50C878";
+                        }
+
+                        break;
+
+                    case "water_level":
+                        if ( int_value < 10 ){
+                            str_value = "EMPTY";
+                            status_color = "#DC143C";
+                        } else if ( int_value < 30 ){
+                            str_value = "ALMOST EMPTY";
+                            status_color = "#DC143C";
+                        } else if ( int_value < 75 ) {
+                            str_value = "OK";
+                            status_color = "#94690D";
+                        } else {
+                            str_value = "FULL";
+                            status_color = "#50C878";
+                        }
+
+                        break;
+
+                    case "temperature":
+
+
+                        break;
+
+                    case "sunlight":
+                        if ( int_value == 0 ) {
+                            str_value = "NOT ENOUGH";
+                            status_color = "#DC143C";
+                        } else {
+                            str_value = "ENOUGH";
+                            status_color = "#50C878";
+                        }
+
+                        break;
+
+                    case "leds_intensity":
+                        if ( int_value == 0 ) {
+                            str_value = "OFF";
+                            status_color = "#DC143C";   // red
+                        } else if ( int_value == 100 ){
+                            status_color = "#50C878";   // green
+                        } else {
+                            status_color = "#94690D"; // yellow
+                        }
+                        break;
+
+                    default:
+                        ((TextView) paramsValuesViewsList.get(i))
+                                .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
+                        status_color = "#94690D";
+                        break;
+                }
+
+                ((TextView) paramsValuesViewsList.get(i))
+                        .setText(str_value);
+
+                if ( status_color != "" )
+                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor(status_color));
             }
 
         }
     }
 
-    public class SendCommandTask extends AsyncTask<String, Void, String> {
+    private void setRepeatingAsyncTask(String task_class, int interval) {
 
-        @Override
-        protected String doInBackground(String... params) {
-            Log.d("TAG","doInBackground");
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
 
-            if ( params[0].charAt(0) == '*' ) {
-                System.out.println("you want to change the intensity of the led");
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            if ( task_class == "GetParamsTask" ){
+                                GetParamsTask task_to_execute = new GetParamsTask();
+                                task_to_execute.execute();
+                            } else {
+                                if ( !checkExistingCommand() )
+                                    timer.cancel();
+                            }
+                        } catch (Exception e) {
+                            // error, do something
+                        }
+                    }
+                });
             }
-            if ( socket == null || out == null || in == null ){
-                Log.d("SendCommandTask", "cannot send command if we are not connected");
-                return null;
-            }
+        };
 
-            String response = null;
+        timer.schedule(task, 0, interval); // interval of one minute
+    }
 
+    class ConnectionTask extends AsyncTask<String, Void, Void> {
+
+        private Exception exception;
+        @SuppressLint("SetTextI18n")
+        protected Void doInBackground(String... urls) {
             try {
-                String message = params[0];
-                out.println(message);
+                URL url = new URL(URL_GLOBAL + URL_GET_PLANT_DATA );
 
-                if ( message == "LED_ON" ) {
-                    System.out.println("SENT MESSAGE TO TURN ON THE LED");
-                }
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
 
-                if ( message == "LED_OFF") {
-                    System.out.println("SENT MESSAGE TO TURN OFF THE LED");
-                }
+                int response_code = conn.getResponseCode();
+                if ( response_code != 200 ) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "Could not connect to server:(",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                        }
+                    });
 
-                if ( message.charAt(0) == '*' ) {
-                    System.out.println("you want to change the intensity of the led");
-                }
+                    throw new RuntimeException("HttpResponseCode: " + response_code);
+                } else {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+//                            Toast.makeText(
+//                                    MainActivity.this,
+//                                    "connected to server <3",
+//                                    Toast.LENGTH_SHORT
+//                            ).show();
 
-                response = in.readLine();   // gets only the first line of the message that is sent
-                System.out.println("RESPONSE SENZORI: " + response);
+                            paramsLayout.setVisibility(View.VISIBLE);
+                            paramsLayout.setAlpha(1.0f);
 
-                String[] parts = response.split("   ");
-                Log.d("STRING_PARTS", "Logging parts: ");
+                            findViewById(R.id.btnRefresh).setVisibility(View.VISIBLE);
+                        }
+                    });
 
-                // display the sent data on the screen
-                if ( parts.length > 1 ) {
-                    for (int index = 0; index < parts.length - 1; index++) {
-                        Log.d("STRING_PARTS", parts[index]);
+                    StringBuilder informationString  = new StringBuilder();
+                    Scanner scanner = new Scanner(url.openStream());
+
+                    while ( scanner.hasNext() ) {
+                        informationString.append(scanner.nextLine());
+                    }
+
+                    scanner.close();
+
+                    if ( informationString.charAt(0) != '[' ) {
+                        System.out.println("not a correct stirng");
+                    } else {
+                        JsonParser parse = new JsonParser();
+                        JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
+
+                        plant_data = (JsonObject) dataObject.get(0);
+
+                        // UPDATE THE UI
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                updateParamValues(params_db);
+                            }
+                        });
                     }
                 }
-
-                Log.i( "RESPONSE_TAG",response);
             } catch (Exception e) {
-                Log.i( "ERROR_TAG", e.toString());
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Could not connect to server:(",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                });
+                this.exception = e;
                 e.printStackTrace();
-                disconnectFromDevice();
+            } finally {
+                System.out.println("reached the end :D");
             }
 
-            Log.d("TAG","sent the data");
-            return response;
-        }
-
-        @Override
-        protected void onPostExecute(String response) {
-            // Handle the response from the server here
-            if (response != null) {
-                Log.i("TAG", "Response from server: " + response);
-            } else {
-                Log.i("TAG", "Failed to get response from server");
-            }
-
+            return null;
         }
     }
+
+    class GetParamsTask extends AsyncTask<String, Void, Void> {
+
+        private Exception exception;
+        @SuppressLint("SetTextI18n")
+        protected Void doInBackground(String... urls) {
+            try {
+                URL url = new URL(URL_GLOBAL + URL_GET_PLANT_DATA );
+
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
+
+                int response_code = conn.getResponseCode();
+                if ( response_code != 200 ) {
+
+                    System.out.println("not 200 upsi");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "Could not connect to server:(",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                        }
+                    });
+
+                    throw new RuntimeException("HttpResponseCode: " + response_code);
+                } else {
+                    System.out.println("got the DATA <3 !!!");
+
+                    StringBuilder informationString  = new StringBuilder();
+                    Scanner scanner = new Scanner(url.openStream());
+
+                    while ( scanner.hasNext() ) {
+                        informationString.append(scanner.nextLine());
+                    }
+
+                    scanner.close();
+
+                    if ( informationString.charAt(0) != '[' ) {
+                        System.out.println("not a correct string");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(
+                                        MainActivity.this,
+                                        "cannot retrieve json :/",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                            }
+                        });
+                    } else {
+                        JsonParser parse = new JsonParser();
+                        JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
+
+                        plant_data = (JsonObject) dataObject.get(0);
+
+                        // UPDATE THE UI
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                updateParamValues(params_db);
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Could not connect to server:(",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                });
+                this.exception = e;
+                e.printStackTrace();
+            } finally {
+                System.out.println("reached the end :D");
+            }
+
+            return null;
+        }
+    }
+
+    class GetCommandTask extends AsyncTask<String, Void, Boolean> {
+
+        Boolean command_being_executed = false;
+
+        protected Boolean doInBackground(String... urls) {
+            try {
+                URL url = new URL("https://80.97.250.38:55443/oxygenie/get_command.php" );
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
+
+                int response_code = conn.getResponseCode();
+                if ( response_code != 200 ) {
+                    System.out.println("not 200 upsi");
+                    throw new RuntimeException("HttpResponseCode: " + response_code);
+                } else {
+
+                    StringBuilder informationString  = new StringBuilder();
+                    Scanner scanner = new Scanner(url.openStream());
+
+                    while ( scanner.hasNext() ) {
+                        informationString.append(scanner.nextLine());
+                    }
+                    scanner.close();
+
+                    System.out.println("GET COMMAND STRING: " + informationString);
+
+                    if ( informationString.toString().equals("no command") ) {
+                        command_being_executed = false; // we are good to send command
+                    } else {
+                        command_being_executed = true;  // another command is being executed -> we have to wait
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                return command_being_executed;
+            }
+
+          //  return this.command_being_executed;
+        }
+    }
+
+
+    class PostCommandReqTask extends AsyncTask<String, Void, Void> {
+        private Exception exception;
+
+        @SuppressLint("SetTextI18n")
+        protected Void doInBackground(String... command) {
+            try {
+                String url = URL_GLOBAL + URL_SEND_COMMAND;
+                URL object = new URL(url);
+                HttpURLConnection con = (HttpURLConnection) object.openConnection();
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setRequestProperty("Accept", "application/json");
+                con.setRequestMethod("POST");
+
+                JSONObject params = new JSONObject();
+
+                System.out.println("this is before the if");
+
+                if ( url.equals(URL_GLOBAL + URL_SEND_COMMAND) ){
+                    System.out.println("now i am assigning param");
+
+                    params.put("parameter_name", command[0]);
+                    params.put("value", Integer.parseInt(command[1]));
+                }
+
+                OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
+                wr.write(params.toString());
+                wr.flush();
+
+                //display what returns the POST request
+                StringBuilder sb = new StringBuilder();
+                int HttpsResult = con.getResponseCode();
+                if (HttpsResult == HttpURLConnection.HTTP_OK) {
+                    BufferedReader br = new BufferedReader(
+                            new InputStreamReader(con.getInputStream(), "utf-8"));
+
+                    System.out.println("TRYING TO SEE WHICH ONE iS SQL");
+                    String line = null;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line + "\n");
+                    }
+
+                    br.close();
+                } else {
+                    System.out.println("this is the else before catch");
+                    System.out.println(con.getResponseMessage());
+                }
+
+            } catch (Exception e) {
+                this.exception = e;
+                System.out.println("CANNOT SEND COMMAND");
+                e.printStackTrace();
+            } finally {
+                System.out.println("reached the end :D");
+
+//                findViewById(R.id.ledControlCV).setVisibility(View.INVISIBLE);
+//
+//                findViewById(R.id.bgTransparentView).setAlpha(0.0f);
+//                findViewById(R.id.bgTransparentView).setVisibility(View.INVISIBLE);
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute() {
+            // TODO: check this.exception
+            // TODO: do something with the feed
+
+            System.out.println(this.exception);
+        }
+    }
+
+    public static class NukeSSLCerts {
+        protected static final String TAG = "NukeSSLCerts";
+
+        public static void nuke() {
+            try {
+                TrustManager[] trustAllCerts = new TrustManager[]{
+                        new X509TrustManager() {
+                            public X509Certificate[] getAcceptedIssuers() {
+                                X509Certificate[] myTrustedAnchors = new X509Certificate[0];
+                                return myTrustedAnchors;
+                            }
+
+                            @Override
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                            }
+
+                            @Override
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                            }
+                        }
+                };
+
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, trustAllCerts, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String arg0, SSLSession arg1) {
+                        return true;
+                    }
+                });
+            } catch (Exception e) {
+            }
+        }
+    }//NukeSSLCerts
 }
