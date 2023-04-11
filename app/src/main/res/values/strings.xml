@@ -4,10 +4,10 @@
 
 
     <string-array name="pumps">
-        <item>pump 1</item>
-        <item>pump 2</item>
-        <item>pump 3</item>
-        <item>pump 4</item>
+        <item>pump_1</item>
+        <item>pump_2</item>
+        <item>pump_3</item>
+        <item>pump_4</item>
     </string-array>
 
     <dimen name="seek_bar_thickness">6dp</dimen>

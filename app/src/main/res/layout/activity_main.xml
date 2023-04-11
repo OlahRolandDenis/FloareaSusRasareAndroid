@@ -414,8 +414,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:alpha="0.0"
-        android:animateLayoutChanges="true"
-        android:visibility="invisible">
+        android:visibility="invisible"
+        android:animateLayoutChanges="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -438,12 +438,14 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
+                android:orientation="horizontal"
+            >
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="10dp"
                     >
 
                     <EditText
@@ -453,6 +455,8 @@
                         android:textColorHint="@color/hint"
                         android:hint="250"
                         android:textColor="@color/black"
+                        android:inputType="number"
+                        android:imeOptions="actionDone"
                         />
 
                     <TextView
@@ -464,30 +468,56 @@
 
                 </LinearLayout>
 
-
-
-                <Spinner
-                    android:id="@+id/spinnerPumps"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
-                    android:spinnerMode="dropdown"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginLeft="200dp"
-                    />
+                    >
+
+                    <Spinner
+                        android:id="@+id/spinnerPumps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:spinnerMode="dropdown"
+                        android:layout_gravity="center_vertical"
+                        />
+                </LinearLayout>
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/btnClosePumpsControl"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
-                android:clickable="true"
-                android:text="close"
-                android:textAlignment="center"
-                android:textColor="@color/teal_700"
-                android:textSize="20sp"
-                android:textStyle="bold|italic" />
+                android:layout_gravity="end"
+                >
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/btnClosePumpsControl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="20dp"
+                    android:clickable="true"
+                    android:text="close"
+                    android:textColor="@color/teal_700"
+                    android:textSize="20sp"
+                    android:textStyle="bold|italic"
+                    android:layout_gravity="center_vertical"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddPumps"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:text="Fill"
+                    android:textStyle="bold"
+                    android:layout_gravity="center_vertical"
+                    />
+
+            </LinearLayout>
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
