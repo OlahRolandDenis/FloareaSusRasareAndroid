@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private Boolean checkExistingCommand() {    // needs_to_stop is used to break the loop when clicking on "send command button" ( to not run forever )
+    private Boolean checkExistingCommand() {
         Boolean command_already_running;
 
         try {
@@ -300,7 +300,6 @@ public class MainActivity extends AppCompatActivity {
 
         final Handler handler = new Handler();
         Timer timer = new Timer();
-        final boolean[] needs_to_stop = new boolean[1];
 
         TimerTask task = new TimerTask() {
             @Override
