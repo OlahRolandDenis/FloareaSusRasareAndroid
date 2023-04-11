@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,7 +21,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.slider.Slider;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -131,8 +131,27 @@ public class MainActivity extends AppCompatActivity {
             setRepeatingAsyncTask("GetCommandTask", 2000);
         });
 
-        ((Slider)findViewById(R.id.ledSlider)).addOnChangeListener((slider, value, fromUser) -> {
-            // new SendCommandTask().execute("*" + value);
+        ((SeekBar) findViewById(R.id.ledSeekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int value;
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                i /= 5;
+                i *= 5;
+
+                ((TextView)findViewById(R.id.ledSeekBarValue)).setText(i + "");
+                value = i;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                new PostCommandReqTask().execute("leds_intensity", Integer.toString(value));
+                setRepeatingAsyncTask("GetCommandTask", 2000);
+            }
         });
 
         findViewById(R.id.ledControlCV).findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
@@ -186,9 +205,15 @@ public class MainActivity extends AppCompatActivity {
             view.setEnabled(enabled);
         }
 
-        Slider slider = (Slider)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(2);
-        slider.setEnabled(enabled);
+        (findViewById(R.id.ledSeekBar)).setEnabled(enabled);
 
+        if ( !enabled ){
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setThumb(getResources().getDrawable(R.drawable.disabled_thumb));
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgressDrawable(getResources().getDrawable(R.drawable.disabled_seekbar));
+        } else {
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setThumb(getResources().getDrawable(R.drawable.seek_thumb));
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgressDrawable(getResources().getDrawable(R.drawable.seek_bar));
+        }
     }
 
     public void navigateToSettings( View view ) {

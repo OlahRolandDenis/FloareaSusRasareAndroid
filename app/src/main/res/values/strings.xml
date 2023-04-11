@@ -9,4 +9,7 @@
         <item>pump 3</item>
         <item>pump 4</item>
     </string-array>
+
+    <dimen name="seek_bar_thickness">6dp</dimen>
+    <dimen name="seek_bar_thumb_size">20dp</dimen>
 </resources>

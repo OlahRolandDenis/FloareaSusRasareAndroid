@@ -9,5 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="red">#990000</color>
     <color name="yellow">#e69138</color>
-    <color name="hint">#808080</color>
+    <color name="hint">#D3D3D3</color>
+
+    <color name="seek_bar_background">#C4C4C4</color>
+    <color name="seek_bar_progress">#ffb600</color>
+    <color name="seek_bar_secondary_progress">#3399CC</color>
 </resources>
