@@ -155,9 +155,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private Boolean checkExistingCommand() {
+    private Boolean checkExistingCommand() {    // needs_to_stop is used to break the loop when clicking on "send command button" ( to not run forever )
         Boolean command_already_running;
+
         try {
+            System.out.println("I am running checkExistingCommand() !!");
             command_already_running = new GetCommandTask().execute().get();
 
             if ( !command_already_running ) {
@@ -165,9 +167,6 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println("GOOD TO GO ( findview ) <3<3");
             } else {
                 setElements(false); // make then disabled
-
-               // Toast.makeText(MainActivity.this, "Another command is being executed. Please wait", Toast.LENGTH_LONG).show();
-
                 System.out.println("BAD TO GO ( findview )://");
             }
         } catch (ExecutionException e) {
@@ -301,6 +300,7 @@ public class MainActivity extends AppCompatActivity {
 
         final Handler handler = new Handler();
         Timer timer = new Timer();
+        final boolean[] needs_to_stop = new boolean[1];
 
         TimerTask task = new TimerTask() {
             @Override
@@ -312,7 +312,8 @@ public class MainActivity extends AppCompatActivity {
                                 GetParamsTask task_to_execute = new GetParamsTask();
                                 task_to_execute.execute();
                             } else {
-                                checkExistingCommand();
+                                if ( !checkExistingCommand() )
+                                    timer.cancel();
                             }
                         } catch (Exception e) {
                             // error, do something
@@ -322,7 +323,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        timer.schedule(task, 0, interval);  // interval of one minute
+        timer.schedule(task, 0, interval); // interval of one minute
     }
 
     class ConnectionTask extends AsyncTask<String, Void, Void> {
