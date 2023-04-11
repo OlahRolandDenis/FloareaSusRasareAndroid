@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -29,7 +28,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -39,11 +37,9 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HostnameVerifier;
@@ -54,76 +50,73 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String URL_LOCAL = "https://192.168.4.210";
-    private static final String URL_GLOBAL = "https://80.97.250.38:55443";
 
-    private static final String URL_GET_PLANT_DATA = "/oxygenie/get_plant_data.php";
-    private static final String URL_SEND_COMMAND = "/oxygenie/send_command.php";
-
+    // UI ELEMENTS
     private LinearLayout paramsLayout;
-    ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
+
+    CardView ledsCV, waterLevelCV, ledsControlCV, pumpsControlCV;
+
     String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight" };
+    ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
 
+    // USED FOR SENDING / GETTING DATA
     JsonObject plant_data;
-
     String selected_pump, input_milis_value;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // set up app ==> accept all https certificates, connect to server, check once a minute for updated params
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         NukeSSLCerts.nuke();    // accept all kind of certificates
 
+        new ConnectionTask().execute(); // connect to server and get plant data
         setRepeatingAsyncTask("GetParamsTask", 60 * 1000);    // update param values every minute
 
-        new ConnectionTask().execute(); // connect to server and get plant data
+        // set up Layouts and CardViews
+        ledsCV = (CardView) findViewById(R.id.ledCV);
+        waterLevelCV = (CardView) findViewById(R.id.waterCV);
+        ledsControlCV = (CardView) findViewById(R.id.ledControlCV);
+        pumpsControlCV = (CardView) findViewById(R.id.pumpsControlCV);
 
         paramsLayout = (LinearLayout) findViewById(R.id.paramsLayout);
 
+
+        setUpParamTVs();    // all values Text Views for layouts from above
+
+        setUpRefreshManager();  // refresh page on refresh button click
+
+        setUpLedsManager(); // control leds ( OPEN PANEL + set ON / OFF / INTENSITY )
+
+        setUpPumpsManager(); // control pumps ( OPEN PANEL + add X ml of water to custom pump )
+    }
+
+    private void setUpRefreshManager() {
+        ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
+            new GetParamsTask().execute();
+        });
+    }
+
+    private void setUpParamTVs() {
         paramsValuesViewsList.add(findViewById(R.id.textLEDValue));
         paramsValuesViewsList.add(findViewById(R.id.textWaterValue));
         paramsValuesViewsList.add(findViewById(R.id.textTemperatureValue));
         paramsValuesViewsList.add(findViewById(R.id.textMoistValue));
         paramsValuesViewsList.add(findViewById(R.id.textSunlightValue));
+    }
 
+    // control leds ( OPEN PANEL + set ON / OFF / INTENSITY )
+    private void setUpLedsManager() {
+        // open panel
+        ledsCV.setOnClickListener( v-> openLEDControl() );
 
+        // leds on
+        ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> controlLEDS(100 ) );
 
-        ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
-            new GetParamsTask().execute();
-        });
+        // leds off
+        ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> controlLEDS(0 ) );
 
-        findViewById(R.id.ledCV).setOnClickListener( v-> {
-            findViewById(R.id.bgTransparentView).setVisibility(View.VISIBLE);
-            findViewById(R.id.bgTransparentView).setAlpha(0.5f);
-            findViewById(R.id.ledControlCV).setVisibility(CardView.VISIBLE);
-            findViewById(R.id.ledControlCV).setAlpha(1.0f);
-
-            if ( checkExistingCommand() ) {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Another command is being executed. Please wait.",
-                        Toast.LENGTH_LONG
-                ).show();
-            }
-        });
-
-        ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
-            if ( !checkExistingCommand() ) {
-                new PostCommandReqTask().execute("leds_intensity", "100");
-            }
-
-            setRepeatingAsyncTask("GetCommandTask", 2000);
-        });
-
-        ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> {
-            if ( !checkExistingCommand() ) {
-                new PostCommandReqTask().execute("leds_intensity", "0");
-            }
-
-            setRepeatingAsyncTask("GetCommandTask", 2000);
-        });
-
+        // custom intensity
         ((SeekBar) findViewById(R.id.ledSeekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             int value;
             @Override
@@ -142,33 +135,46 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                if ( !checkExistingCommand() ) {
-                    new PostCommandReqTask().execute("leds_intensity", Integer.toString(value));
-                }
-
-                setRepeatingAsyncTask("GetCommandTask", 2000);
+                controlLEDS(value);
             }
         });
 
-        findViewById(R.id.ledControlCV).findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
-            findViewById(R.id.ledControlCV).setAlpha(0.0f);
-            findViewById(R.id.ledControlCV).setVisibility(CardView.INVISIBLE);
+        // close panel
+        findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
+            ledsControlCV.setAlpha(0.0f);
+            ledsControlCV.setVisibility(CardView.INVISIBLE);
             findViewById(R.id.bgTransparentView).setAlpha(0.0f);
         });
 
-        findViewById(R.id.waterCV).setOnClickListener(v -> {
-            if ( checkExistingCommand() ) {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Another command is being executed. Please wait.",
-                        Toast.LENGTH_LONG
-                ).show();
-            }
+    }
 
-            findViewById(R.id.pumpsControlCV).setVisibility(CardView.VISIBLE);
-            findViewById(R.id.pumpsControlCV).setAlpha(1.0f);
-            findViewById(R.id.bgTransparentView).setAlpha(0.5f);
-        });
+    private void openLEDControl() {
+        findViewById(R.id.bgTransparentView).setVisibility(View.VISIBLE);
+        findViewById(R.id.bgTransparentView).setAlpha(0.5f);
+        ledsControlCV.setVisibility(CardView.VISIBLE);
+        ledsControlCV.setAlpha(1.0f);
+
+        if ( checkExistingCommand() ) {
+            Toast.makeText(
+                    MainActivity.this,
+                    "Another command is being executed. Please wait.",
+                    Toast.LENGTH_LONG
+            ).show();
+        }
+    }
+
+    private void controlLEDS(int intensity) {
+        if ( !checkExistingCommand() ) {
+            new PostCommandReqTask().execute("leds_intensity", Integer.toString(intensity));
+        }
+
+        setRepeatingAsyncTask("GetCommandTask", 2000);
+    }
+
+
+    // control pumps ( OPEN PANEL + add X ml of water to custom pump )
+    private void setUpPumpsManager() {
+        waterLevelCV.setOnClickListener(v -> openPumpsControl() );
 
         Spinner spinner = ((Spinner)findViewById(R.id.spinnerPumps));
         ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
@@ -187,11 +193,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.pumpsControlCV).findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
+        pumpsControlCV.findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
             ((EditText) findViewById(R.id.inputMilisWater)).onEditorAction(EditorInfo.IME_ACTION_DONE);
             ((EditText) findViewById(R.id.inputMilisWater)).setText("");
-            findViewById(R.id.pumpsControlCV).setAlpha(0.0f);
-            findViewById(R.id.pumpsControlCV).setVisibility(CardView.INVISIBLE);
+            pumpsControlCV.setAlpha(0.0f);
+            pumpsControlCV.setVisibility(CardView.INVISIBLE);
             findViewById(R.id.bgTransparentView).setAlpha(0.0f);
         });
 
@@ -205,6 +211,21 @@ public class MainActivity extends AppCompatActivity {
 
             setRepeatingAsyncTask("GetCommandTask", 2000);
         });
+
+    }
+
+    private void openPumpsControl() {
+        if ( checkExistingCommand() ) {
+            Toast.makeText(
+                    MainActivity.this,
+                    "Another command is being executed. Please wait.",
+                    Toast.LENGTH_LONG
+            ).show();
+        }
+
+        pumpsControlCV.setVisibility(CardView.VISIBLE);
+        pumpsControlCV.setAlpha(1.0f);
+        findViewById(R.id.bgTransparentView).setAlpha(0.5f);
     }
 
     private Boolean checkExistingCommand() {
@@ -263,97 +284,76 @@ public class MainActivity extends AppCompatActivity {
     private void updateParamValues(String[] params_db) {
         for ( int i = 0; i < params_db.length; i++ ){
             String param_to_update = params_db[i].toString();
-            String param_value = plant_data.get(param_to_update).toString();
-            System.out.println("THIS IS WHAT YOU ARE LOOKING FOR: " + param_to_update + ": " + param_value);
 
-            if ( (param_to_update == "pump_1" || param_to_update == "pump_2" || param_to_update == "pump_3" || param_to_update == "pump_4") ) {
-                if ( param_value == "0" || Integer.parseInt(param_value) == 0 ) {
+            String str_value = (plant_data.get(params_db[i])).toString().replace("\"", "");
+            int int_value = Integer.parseInt(str_value);
+            String status_color = new PLANT_PARAMS_COLORS().BLACK;
+
+            switch ( param_to_update ){
+                case "moist":
+                    if ( int_value == 0 ){
+                        str_value = "NEEDS WATER";
+                        status_color = new PLANT_PARAMS_COLORS().RED;
+                    } else {
+                        str_value = "GOOD";
+                        status_color = new PLANT_PARAMS_COLORS().GREEN;
+                    }
+                    break;
+
+                case "water_level":
+                    if ( int_value < 10 ){
+                        str_value = "EMPTY";
+                        status_color = new PLANT_PARAMS_COLORS().RED;
+                    } else if ( int_value < 30 ){
+                        str_value = "ALMOST EMPTY";
+                        status_color = new PLANT_PARAMS_COLORS().RED;
+                    } else if ( int_value < 75 ) {
+                        str_value = "OK";
+                        status_color = new PLANT_PARAMS_COLORS().YELLOW;
+                    } else {
+                        str_value = "FULL";
+                        status_color = new PLANT_PARAMS_COLORS().GREEN;
+                    }
+
+                    break;
+
+                case "temperature":
+                    // to be determined
+                    break;
+
+                case "sunlight":
+                    if ( int_value == 0 ) {
+                        str_value = "NOT ENOUGH";
+                        status_color = new PLANT_PARAMS_COLORS().RED;
+                    } else {
+                        str_value = "ENOUGH";
+                        status_color = new PLANT_PARAMS_COLORS().GREEN;
+                    }
+
+                    break;
+
+                case "leds_intensity":
+                    if ( int_value == 0 ) {
+                        str_value = "OFF";
+                        status_color = new PLANT_PARAMS_COLORS().RED;   // red
+                    } else if ( int_value == 100 ){
+                        status_color = new PLANT_PARAMS_COLORS().GREEN;   // green
+                    } else {
+                        status_color = new PLANT_PARAMS_COLORS().YELLOW; // yellow
+                    }
+                    break;
+
+                default:
                     ((TextView) paramsValuesViewsList.get(i))
-                            .setText("OFF");
-
-                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor("#DC143C"));
-                } else {
-                    ((TextView) paramsValuesViewsList.get(i))
-                            .setText("ON");
-
-                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor("#50C878"));
-                }
-            } else {
-                String str_value = (plant_data.get(params_db[i])).toString().replace("\"", "");
-                int int_value = Integer.parseInt(str_value);
-                String status_color = "#000000";
-
-                switch ( param_to_update ){
-                    case "moist":
-                        //value = (plant_data.get(params_db[i])).toString().replace("\"", "");
-
-                        if ( int_value == 0 ){
-                            str_value = "NEEDS WATER";
-                            status_color = "#DC143C";
-                        } else {
-                            str_value = "OK";
-                            status_color = "#50C878";
-                        }
-
-                        break;
-
-                    case "water_level":
-                        if ( int_value < 10 ){
-                            str_value = "EMPTY";
-                            status_color = "#DC143C";
-                        } else if ( int_value < 30 ){
-                            str_value = "ALMOST EMPTY";
-                            status_color = "#DC143C";
-                        } else if ( int_value < 75 ) {
-                            str_value = "OK";
-                            status_color = "#94690D";
-                        } else {
-                            str_value = "FULL";
-                            status_color = "#50C878";
-                        }
-
-                        break;
-
-                    case "temperature":
-
-
-                        break;
-
-                    case "sunlight":
-                        if ( int_value == 0 ) {
-                            str_value = "NOT ENOUGH";
-                            status_color = "#DC143C";
-                        } else {
-                            str_value = "ENOUGH";
-                            status_color = "#50C878";
-                        }
-
-                        break;
-
-                    case "leds_intensity":
-                        if ( int_value == 0 ) {
-                            str_value = "OFF";
-                            status_color = "#DC143C";   // red
-                        } else if ( int_value == 100 ){
-                            status_color = "#50C878";   // green
-                        } else {
-                            status_color = "#94690D"; // yellow
-                        }
-                        break;
-
-                    default:
-                        ((TextView) paramsValuesViewsList.get(i))
-                                .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
-                        status_color = "#94690D";
-                        break;
-                }
-
-                ((TextView) paramsValuesViewsList.get(i))
-                        .setText(str_value);
-
-                if ( status_color != "" )
-                    ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor(status_color));
+                            .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
+                    status_color = new PLANT_PARAMS_COLORS().BLACK;
+                    break;
             }
+
+            ((TextView) paramsValuesViewsList.get(i))
+                    .setText(str_value);
+
+            ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor(status_color));
 
         }
     }
@@ -393,7 +393,7 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... urls) {
             try {
-                URL url = new URL(URL_GLOBAL + URL_GET_PLANT_DATA );
+                URL url = new URL(new URLS().URL_GLOBAL + new PATHS().PATH_GET_PLANT_DATA );
 
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -417,11 +417,11 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-//                            Toast.makeText(
-//                                    MainActivity.this,
-//                                    "connected to server <3",
-//                                    Toast.LENGTH_SHORT
-//                            ).show();
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "connected to server <3",
+                                    Toast.LENGTH_SHORT
+                            ).show();
 
                             paramsLayout.setVisibility(View.VISIBLE);
                             paramsLayout.setAlpha(1.0f);
@@ -483,7 +483,7 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... urls) {
             try {
-                URL url = new URL(URL_GLOBAL + URL_GET_PLANT_DATA );
+                URL url = new URL(new URLS().URL_GLOBAL + new PATHS().PATH_GET_PLANT_DATA );
 
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -571,7 +571,7 @@ public class MainActivity extends AppCompatActivity {
 
         protected Boolean doInBackground(String... urls) {
             try {
-                URL url = new URL("https://80.97.250.38:55443/oxygenie/get_command.php" );
+                URL url = new URL(new URLS().URL_GLOBAL + new PATHS().PATH_GET_COMMAND );
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.connect();
@@ -615,7 +615,7 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... command) {
             try {
-                String url = URL_GLOBAL + URL_SEND_COMMAND;
+                String url = new URLS().URL_GLOBAL + new PATHS().PATH_SEND_COMMAND;
                 URL object = new URL(url);
                 HttpURLConnection con = (HttpURLConnection) object.openConnection();
                 con.setDoOutput(true);
@@ -626,14 +626,8 @@ public class MainActivity extends AppCompatActivity {
 
                 JSONObject params = new JSONObject();
 
-                System.out.println("this is before the if");
-
-                if ( url.equals(URL_GLOBAL + URL_SEND_COMMAND) ){
-                    System.out.println("now i am assigning param");
-
-                    params.put("parameter_name", command[0]);
-                    params.put("value", Integer.parseInt(command[1]));
-                }
+                params.put("parameter_name", command[0]);
+                params.put("value", Integer.parseInt(command[1]));
 
                 OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
                 wr.write(params.toString());
@@ -664,11 +658,6 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             } finally {
                 System.out.println("reached the end :D");
-
-//                findViewById(R.id.ledControlCV).setVisibility(View.INVISIBLE);
-//
-//                findViewById(R.id.bgTransparentView).setAlpha(0.0f);
-//                findViewById(R.id.bgTransparentView).setVisibility(View.INVISIBLE);
             }
 
             return null;
@@ -683,8 +672,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static class NukeSSLCerts {
-        protected static final String TAG = "NukeSSLCerts";
-
         public static void nuke() {
             try {
                 TrustManager[] trustAllCerts = new TrustManager[]{
