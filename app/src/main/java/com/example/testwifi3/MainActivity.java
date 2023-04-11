@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout paramsLayout;
     ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
-    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight", "pump_1", "pump_2", "pump_3", "pump_4" };
+    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight" };
 
     JsonObject plant_data;
 
@@ -79,10 +79,6 @@ public class MainActivity extends AppCompatActivity {
         paramsValuesViewsList.add(findViewById(R.id.textTemperatureValue));
         paramsValuesViewsList.add(findViewById(R.id.textMoistValue));
         paramsValuesViewsList.add(findViewById(R.id.textSunlightValue));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP1Value));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP2Value));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP3Value));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP4Value));
 
         ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
         spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
