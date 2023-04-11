@@ -100,19 +100,16 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.ledControlCV).setAlpha(1.0f);
 
             if ( checkExistingCommand() ) {
-                System.out.println("checkexistingcommand() ran: command already running");
-            } else {
-                System.out.println("checkexistingcommand() ran: all good :)");
+                Toast.makeText(
+                        MainActivity.this,
+                        "Another command is being executed. Please wait.",
+                        Toast.LENGTH_LONG
+                ).show();
             }
         });
 
         ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
-            System.out.println("this is on click");
-
-            if ( checkExistingCommand() ) {
-                System.out.println("checkexistingcommand() ran: command already running");
-            } else {
-                System.out.println("checkexistingcommand() ran: all good :)");
+            if ( !checkExistingCommand() ) {
                 new PostCommandReqTask().execute("leds_intensity", "100");
             }
 
@@ -120,12 +117,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> {
-            System.out.println("this is on click");
-
-            if ( checkExistingCommand() ) {
-                System.out.println("checkexistingcommand() ran: command already running");
-            } else {
-                System.out.println("checkexistingcommand() ran: all good :)");
+            if ( !checkExistingCommand() ) {
                 new PostCommandReqTask().execute("leds_intensity", "0");
             }
 
@@ -150,7 +142,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                new PostCommandReqTask().execute("leds_intensity", Integer.toString(value));
+                if ( !checkExistingCommand() ) {
+                    new PostCommandReqTask().execute("leds_intensity", Integer.toString(value));
+                }
+
                 setRepeatingAsyncTask("GetCommandTask", 2000);
             }
         });
@@ -162,6 +157,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.waterCV).setOnClickListener(v -> {
+            if ( checkExistingCommand() ) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Another command is being executed. Please wait.",
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+
             findViewById(R.id.pumpsControlCV).setVisibility(CardView.VISIBLE);
             findViewById(R.id.pumpsControlCV).setAlpha(1.0f);
             findViewById(R.id.bgTransparentView).setAlpha(0.5f);
@@ -196,10 +199,7 @@ public class MainActivity extends AppCompatActivity {
         ((MaterialButton)((findViewById(R.id.pumpsControlCV).findViewById(R.id.btnAddPumps)))).setOnClickListener(v -> {
             input_milis_value = ((EditText) findViewById(R.id.inputMilisWater)).getText().toString();
 
-            if ( checkExistingCommand() ) {
-                System.out.println("checkexistingcommand() ran: command already running");
-            } else {
-                System.out.println("checkexistingcommand() ran: all good :)");
+            if ( !checkExistingCommand() ) {
                 new PostCommandReqTask().execute(selected_pump, input_milis_value);
             }
 
@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Boolean checkExistingCommand() {
-        Boolean command_already_running;
+        Boolean command_already_running = null;
 
         try {
             System.out.println("I am running checkExistingCommand() !!");
@@ -225,9 +225,9 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            return command_already_running;
         }
-
-        return command_already_running;
     }
 
     private void setElements(boolean enabled) {
