@@ -8,8 +8,7 @@ include("db_connect.php");
 // set default values for not-set params
 if(!isset($_GET['opt'])) $_GET['opt'] = 'command';
 if(!isset($_POST['parameter_name'])) $_POST['parameter_name'] = '';
-if(!isset($_POST['value'])) $_POST['value'] = -1;
-
+if(!isset($_POST['value'])) $_POST['value'] = 0;
 
 // get $opt from URL parameter
 $opt = $_GET['opt'];

@@ -44,7 +44,7 @@ echo "data variable has the type: {$dataType}";
 
 $status = "GOOD";
 
-if ( gettype(json_decode($data)) == "string" ) {
+if ( gettype(json_decode($data)) == "string" || $dataType == 'NULL' ) {
     $status = "BAD";
     echo nl2br("\n\nError occured: CHECK THE PARAMETERS SENT OR THE JSON FORMAT");
 } else {
@@ -81,7 +81,17 @@ if ( gettype(json_decode($data)) == "string" ) {
 if ( $status == "GOOD" ) {
     switch ( $opt ) {
         case "add":
-            $sql = "INSERT INTO `Plant 1` (`leds_intensity`, `water_level`, `temperature`, `moist`, `sunlight`, `pump_1`, `pump_2`, `pump_3`, `pump_4`) VALUES ('".$leds_intensity."', '".$water_level."', '".$temperature."', '".$moist."', '".$sunlight."', '".$pump_1."', '".$pump_2."', '".$pump_3."', '".$pump_4."');";
+          $sql = "UPDATE `Plant 1`
+                SET leds_intensity = $leds_intensity,
+                    water_level = $water_level,
+                    temperature = $temperature,
+                    moist = $moist,
+                    sunlight = $sunlight,
+                    pump_1 = $pump_1,
+                    pump_2 = $pump_2,
+                    pump_3 = $pump_3,
+                    pump_4 = $pump_4
+                WHERE id = 48;";
     
             echo nl2br("\n {$sql}");
     

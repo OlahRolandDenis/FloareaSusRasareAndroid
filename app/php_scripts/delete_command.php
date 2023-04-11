@@ -16,32 +16,24 @@ $opt=htmlspecialchars($opt);
 
 $status = "GOOD";
 
-if ( gettype(json_decode($data)) == "string" ) {
-    $status = "BAD";
-
-    echo nl2br("\n\nError occured: CHECK THE PARAMETERS SENT OR THE JSON FORMAT");
-}
-
-if ( $status == "GOOD" ) {
-    switch ( $opt ) {
-        case "delete_command":
-            $sql = "DELETE FROM `Commands` WHERE `Commands`.`id` = 1";
+switch ( $opt ) {
+    case "delete_command":
+        $sql = "DELETE FROM `Commands` WHERE `Commands`.`id` = 1";
     
-            echo nl2br("\n {$sql}");
-    
-            if ( mysqli_query($conn, $sql) ) {
-                    print "DATA SENT SUCCESSFULLY!";
-            } else {
-                    echo "Error: " . $sql . "<br>" . mysqli_error($conn);
-                    echo "Error: ". mysqli_error($conn);
-            }
+        echo nl2br("\n {$sql}");
+
+        if ( mysqli_query($conn, $sql) ) {
+                print "DATA SENT SUCCESSFULLY!";
+        } else {                    
+            echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+            echo "Error: ". mysqli_error($conn);
+        }
     
         break;
     
-        default:
-            echo 'entered default case';
-            break;
-    }
+    default:
+        echo 'entered default case';
+        break;
 }
 
 ?>
