@@ -231,26 +231,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setElements(boolean enabled) {
-        ArrayList<LinearLayout> layouts = new ArrayList<>();
+        LinearLayout leds_layout = ((LinearLayout)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(1));
 
-        // leds
-        layouts.add(((LinearLayout)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(1)));
-
-        // pumps
-        layouts.add(((LinearLayout)((LinearLayout)((CardView)findViewById(R.id.pumpsControlCV)).getChildAt(0)).getChildAt(1)));
-
-        for ( int index = 0; index < layouts.size(); index++ ){
-            LinearLayout layout = layouts.get(index);
-            final int childCount = layout.getChildCount();
-
-            for (int i = 0; i < childCount; i++) {
-                View view = layout.getChildAt(i);
-                view.setEnabled(enabled);
-            }
+        // LEDS LAYOUT
+        for (int i = 0; i < leds_layout.getChildCount(); i++) {
+            View view = leds_layout.getChildAt(i);
+            view.setEnabled(enabled);
         }
-
-        findViewById(R.id.btnAddPumps).setEnabled(enabled);
-        findViewById(R.id.inputMilisWater).setEnabled(enabled);
 
         if ( !enabled ){
             ((SeekBar) findViewById(R.id.ledSeekBar)).setThumb(getResources().getDrawable(R.drawable.disabled_thumb));
@@ -259,6 +246,11 @@ public class MainActivity extends AppCompatActivity {
             ((SeekBar) findViewById(R.id.ledSeekBar)).setThumb(getResources().getDrawable(R.drawable.seek_thumb));
             ((SeekBar) findViewById(R.id.ledSeekBar)).setProgressDrawable(getResources().getDrawable(R.drawable.seek_bar));
         }
+
+        // PUMPS CONTROL LAYOUT
+        findViewById(R.id.btnAddPumps).setEnabled(enabled);
+        findViewById(R.id.inputMilisWater).setEnabled(enabled);
+
     }
 
     public void navigateToSettings( View view ) {
