@@ -9,9 +9,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,12 +24,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.slider.Slider;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -35,6 +39,7 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -57,9 +62,11 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout paramsLayout;
     ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
-    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight", "pump_1", "pump_2", "pump_3", "pump_4" };
+    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight" };
 
     JsonObject plant_data;
+
+    String selected_pump, input_milis_value;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,14 +86,8 @@ public class MainActivity extends AppCompatActivity {
         paramsValuesViewsList.add(findViewById(R.id.textTemperatureValue));
         paramsValuesViewsList.add(findViewById(R.id.textMoistValue));
         paramsValuesViewsList.add(findViewById(R.id.textSunlightValue));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP1Value));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP2Value));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP3Value));
-        paramsValuesViewsList.add(findViewById(R.id.textPUMP4Value));
 
-        ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
-        spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
-        ((Spinner)findViewById(R.id.spinnerPumps)).setAdapter(spinner_adapter);
+
 
         ((ImageView) findViewById(R.id.btnRefresh)).setOnClickListener(v -> {
             new GetParamsTask().execute();
@@ -99,19 +100,16 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.ledControlCV).setAlpha(1.0f);
 
             if ( checkExistingCommand() ) {
-                System.out.println("checkexistingcommand() ran: command already running");
-            } else {
-                System.out.println("checkexistingcommand() ran: all good :)");
+                Toast.makeText(
+                        MainActivity.this,
+                        "Another command is being executed. Please wait.",
+                        Toast.LENGTH_LONG
+                ).show();
             }
         });
 
         ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
-            System.out.println("this is on click");
-
-            if ( checkExistingCommand() ) {
-                System.out.println("checkexistingcommand() ran: command already running");
-            } else {
-                System.out.println("checkexistingcommand() ran: all good :)");
+            if ( !checkExistingCommand() ) {
                 new PostCommandReqTask().execute("leds_intensity", "100");
             }
 
@@ -119,20 +117,37 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> {
-            System.out.println("this is on click");
-
-            if ( checkExistingCommand() ) {
-                System.out.println("checkexistingcommand() ran: command already running");
-            } else {
-                System.out.println("checkexistingcommand() ran: all good :)");
+            if ( !checkExistingCommand() ) {
                 new PostCommandReqTask().execute("leds_intensity", "0");
             }
 
             setRepeatingAsyncTask("GetCommandTask", 2000);
         });
 
-        ((Slider)findViewById(R.id.ledSlider)).addOnChangeListener((slider, value, fromUser) -> {
-            // new SendCommandTask().execute("*" + value);
+        ((SeekBar) findViewById(R.id.ledSeekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int value;
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                i /= 5;
+                i *= 5;
+
+                ((TextView)findViewById(R.id.ledSeekBarValue)).setText(i + "");
+                value = i;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if ( !checkExistingCommand() ) {
+                    new PostCommandReqTask().execute("leds_intensity", Integer.toString(value));
+                }
+
+                setRepeatingAsyncTask("GetCommandTask", 2000);
+            }
         });
 
         findViewById(R.id.ledControlCV).findViewById(R.id.btnCloseLedControl).setOnClickListener(v-> {
@@ -142,21 +157,58 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.waterCV).setOnClickListener(v -> {
+            if ( checkExistingCommand() ) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Another command is being executed. Please wait.",
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+
             findViewById(R.id.pumpsControlCV).setVisibility(CardView.VISIBLE);
             findViewById(R.id.pumpsControlCV).setAlpha(1.0f);
             findViewById(R.id.bgTransparentView).setAlpha(0.5f);
         });
 
+        Spinner spinner = ((Spinner)findViewById(R.id.spinnerPumps));
+        ArrayAdapter<CharSequence> spinner_adapter = ArrayAdapter.createFromResource(this, R.array.pumps, android.R.layout.simple_spinner_item);
+        spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        spinner.setAdapter(spinner_adapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                String selected_item = spinner.getSelectedItem().toString();
+                selected_pump = selected_item;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
         findViewById(R.id.pumpsControlCV).findViewById(R.id.btnClosePumpsControl).setOnClickListener(v -> {
+            ((EditText) findViewById(R.id.inputMilisWater)).onEditorAction(EditorInfo.IME_ACTION_DONE);
+            ((EditText) findViewById(R.id.inputMilisWater)).setText("");
             findViewById(R.id.pumpsControlCV).setAlpha(0.0f);
             findViewById(R.id.pumpsControlCV).setVisibility(CardView.INVISIBLE);
             findViewById(R.id.bgTransparentView).setAlpha(0.0f);
         });
 
+
+        ((MaterialButton)((findViewById(R.id.pumpsControlCV).findViewById(R.id.btnAddPumps)))).setOnClickListener(v -> {
+            input_milis_value = ((EditText) findViewById(R.id.inputMilisWater)).getText().toString();
+
+            if ( !checkExistingCommand() ) {
+                new PostCommandReqTask().execute(selected_pump, input_milis_value);
+            }
+
+            setRepeatingAsyncTask("GetCommandTask", 2000);
+        });
     }
 
     private Boolean checkExistingCommand() {
-        Boolean command_already_running;
+        Boolean command_already_running = null;
 
         try {
             System.out.println("I am running checkExistingCommand() !!");
@@ -173,21 +225,31 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            return command_already_running;
         }
-
-        return command_already_running;
     }
 
     private void setElements(boolean enabled) {
-        LinearLayout layout = ((LinearLayout)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(1));
-        final int childCount = layout.getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            View view = layout.getChildAt(i);
+        LinearLayout leds_layout = ((LinearLayout)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(1));
+
+        // LEDS LAYOUT
+        for (int i = 0; i < leds_layout.getChildCount(); i++) {
+            View view = leds_layout.getChildAt(i);
             view.setEnabled(enabled);
         }
 
-        Slider slider = (Slider)((LinearLayout)((CardView)findViewById(R.id.ledControlCV)).getChildAt(0)).getChildAt(2);
-        slider.setEnabled(enabled);
+        if ( !enabled ){
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setThumb(getResources().getDrawable(R.drawable.disabled_thumb));
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgressDrawable(getResources().getDrawable(R.drawable.disabled_seekbar));
+        } else {
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setThumb(getResources().getDrawable(R.drawable.seek_thumb));
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgressDrawable(getResources().getDrawable(R.drawable.seek_bar));
+        }
+
+        // PUMPS CONTROL LAYOUT
+        findViewById(R.id.btnAddPumps).setEnabled(enabled);
+        findViewById(R.id.inputMilisWater).setEnabled(enabled);
 
     }
 

@@ -54,7 +54,6 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingVertical="70dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -289,180 +288,6 @@
                         app:layout_constraintTop_toTopOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/pump1CV"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="17dp"
-                android:clickable="true"
-                app:cardBackgroundColor="#FDFDFD"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="10dp">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/paramLayout6"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:padding="15dp">
-
-                    <TextView
-                        android:id="@+id/lblPUMP1Param"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Pump 1"
-                        android:textColor="@color/black"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/textPUMP1Value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginRight="20dp"
-                        android:text=""
-                        android:textColor="@color/red"
-                        android:textSize="24sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/pump2CV"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="17dp"
-                android:clickable="true"
-                app:cardBackgroundColor="#FDFDFD"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="10dp">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/paramLayout7"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:padding="15dp">
-
-                    <TextView
-                        android:id="@+id/lblPUMP2Param"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Pump 2"
-                        android:textColor="@color/black"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/textPUMP2Value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginRight="20dp"
-                        android:text=""
-                        android:textColor="@color/red"
-                        android:textSize="24sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/pump3CV"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="17dp"
-                android:clickable="true"
-                app:cardBackgroundColor="#FDFDFD"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="10dp">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/paramLayout8"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:padding="15dp">
-
-                    <TextView
-                        android:id="@+id/lblPUMP3Param"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Pump 3"
-                        android:textColor="@color/black"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/textPUMP3Value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginRight="20dp"
-                        android:text=""
-                        android:textColor="@color/red"
-                        android:textSize="24sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/pump4CV"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="17dp"
-                android:clickable="true"
-                app:cardBackgroundColor="#FDFDFD"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="10dp">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/paramLayout9"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:padding="15dp">
-
-                    <TextView
-                        android:id="@+id/lblPUMP4Param"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Pump 4"
-                        android:textColor="@color/black"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/textPUMP4Value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginRight="20dp"
-                        android:text=""
-                        android:textColor="@color/red"
-                        android:textSize="24sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </androidx.cardview.widget.CardView>
-
-
         </LinearLayout>
     </ScrollView>
 
@@ -527,15 +352,37 @@
             </LinearLayout>
 
 
-            <com.google.android.material.slider.Slider
-                android:id="@+id/ledSlider"
+            <LinearLayout
+                android:id="@+id/ledSeekBarLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:stepSize="5"
-                android:valueFrom="0"
-                android:valueTo="100"
-                app:trackHeight="15dp"
-                />
+                android:orientation="horizontal"
+                >
+
+                <SeekBar
+                    android:id="@+id/ledSeekBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_gravity="center_vertical"
+                    android:max="100"
+                    android:progressBackgroundTint="@color/seek_bar_background"
+                    android:progressDrawable="@drawable/seek_bar"
+                    android:thumb="@drawable/seek_thumb"
+                    />
+
+                <TextView
+                    android:id="@+id/ledSeekBarValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:textSize="16sp"
+                    android:text="0"
+                    />
+
+            </LinearLayout>
+
+
             <TextView
                 android:id="@+id/btnCloseLedControl"
                 android:layout_width="match_parent"
@@ -567,8 +414,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:alpha="0.0"
-        android:animateLayoutChanges="true"
-        android:visibility="invisible">
+        android:visibility="invisible"
+        android:animateLayoutChanges="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -591,12 +438,14 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
+                android:orientation="horizontal"
+            >
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="10dp"
                     >
 
                     <EditText
@@ -606,6 +455,8 @@
                         android:textColorHint="@color/hint"
                         android:hint="250"
                         android:textColor="@color/black"
+                        android:inputType="number"
+                        android:imeOptions="actionDone"
                         />
 
                     <TextView
@@ -617,30 +468,56 @@
 
                 </LinearLayout>
 
-
-
-                <Spinner
-                    android:id="@+id/spinnerPumps"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
-                    android:spinnerMode="dropdown"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginLeft="200dp"
-                    />
+                    >
+
+                    <Spinner
+                        android:id="@+id/spinnerPumps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:spinnerMode="dropdown"
+                        android:layout_gravity="center_vertical"
+                        />
+                </LinearLayout>
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/btnClosePumpsControl"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
-                android:clickable="true"
-                android:text="close"
-                android:textAlignment="center"
-                android:textColor="@color/teal_700"
-                android:textSize="20sp"
-                android:textStyle="bold|italic" />
+                android:layout_gravity="end"
+                >
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/btnClosePumpsControl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="20dp"
+                    android:clickable="true"
+                    android:text="close"
+                    android:textColor="@color/teal_700"
+                    android:textSize="20sp"
+                    android:textStyle="bold|italic"
+                    android:layout_gravity="center_vertical"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddPumps"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:text="Fill"
+                    android:textStyle="bold"
+                    android:layout_gravity="center_vertical"
+                    />
+
+            </LinearLayout>
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -655,14 +532,4 @@
         android:alpha="0"
         android:animateLayoutChanges="true"
         />
-
-    <ProgressBar
-        android:id="@+id/progressbar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:visibility="invisible"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
