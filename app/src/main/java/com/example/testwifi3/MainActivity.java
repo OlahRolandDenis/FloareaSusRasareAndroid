@@ -337,6 +337,7 @@ public class MainActivity extends AppCompatActivity {
                         str_value = "OFF";
                         status_color = new PLANT_PARAMS_COLORS().RED;   // red
                     } else if ( int_value == 100 ){
+                        str_value = "ON";
                         status_color = new PLANT_PARAMS_COLORS().GREEN;   // green
                     } else {
                         status_color = new PLANT_PARAMS_COLORS().YELLOW; // yellow
@@ -429,32 +430,6 @@ public class MainActivity extends AppCompatActivity {
                             findViewById(R.id.btnRefresh).setVisibility(View.VISIBLE);
                         }
                     });
-
-                    StringBuilder informationString  = new StringBuilder();
-                    Scanner scanner = new Scanner(url.openStream());
-
-                    while ( scanner.hasNext() ) {
-                        informationString.append(scanner.nextLine());
-                    }
-
-                    scanner.close();
-
-                    if ( informationString.charAt(0) != '[' ) {
-                        System.out.println("not a correct stirng");
-                    } else {
-                        JsonParser parse = new JsonParser();
-                        JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
-
-                        plant_data = (JsonObject) dataObject.get(0);
-
-                        // UPDATE THE UI
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                updateParamValues(params_db);
-                            }
-                        });
-                    }
                 }
             } catch (Exception e) {
                 runOnUiThread(new Runnable() {
