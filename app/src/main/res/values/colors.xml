@@ -10,6 +10,7 @@
     <color name="red">#990000</color>
     <color name="yellow">#e69138</color>
     <color name="hint">#D3D3D3</color>
+    <color name="refresh">#666666</color>
     <color name="white_bg">#fefefe</color>
 
     <color name="seek_bar_background">#C4C4C4</color>
