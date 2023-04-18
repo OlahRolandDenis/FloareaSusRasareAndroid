@@ -12,6 +12,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -111,10 +112,18 @@ public class MainActivity extends AppCompatActivity {
         ledsCV.setOnClickListener( v-> openLEDControl() );
 
         // leds on
-        ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> controlLEDS(100 ) );
+        ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
+            controlLEDS(100);
+
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgress(135);
+        } );
 
         // leds off
-        ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> controlLEDS(0 ) );
+        ((MaterialButton)findViewById(R.id.btnLedOFF)).setOnClickListener(v -> {
+            controlLEDS(0);
+
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgress(0);
+        } );
 
         // custom intensity
         ((SeekBar) findViewById(R.id.ledSeekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -124,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
                 i /= 5;
                 i *= 5;
 
-                ((TextView)findViewById(R.id.ledSeekBarValue)).setText(i + "");
+                ((TextView)findViewById(R.id.ledSeekBarValue)).setText(i - 35 + "");
                 value = i;
             }
 
@@ -151,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
     private void openLEDControl() {
         findViewById(R.id.bgTransparentView).setVisibility(View.VISIBLE);
         findViewById(R.id.bgTransparentView).setAlpha(0.5f);
-        ledsControlCV.setVisibility(CardView.VISIBLE);
+        ledsControlCV.setVisibility(View.VISIBLE);
         ledsControlCV.setAlpha(1.0f);
 
         if ( checkExistingCommand() ) {
