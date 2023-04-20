@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     CardView ledsCV, waterLevelCV, ledsControlCV, pumpsControlCV;
 
-    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight" };
+    String[] params_db = { "leds_intensity", "water_level", "temperature", "moist", "sunlight", "pump_1", "pump_2", "pump_3", "pump_4" };
     ArrayList<TextView> paramsValuesViewsList = new ArrayList<>();
 
     // USED FOR SENDING / GETTING DATA
@@ -291,11 +291,17 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("ResourceAsColor")
     private void updateParamValues(String[] params_db) {
+        String param_to_update, str_value = "";
+        int int_value = 0;
         for ( int i = 0; i < params_db.length; i++ ){
-            String param_to_update = params_db[i].toString();
+            param_to_update = params_db[i].toString();
 
-            String str_value = (plant_data.get(params_db[i])).toString().replace("\"", "");
-            int int_value = Integer.parseInt(str_value);
+            if ( plant_data.get(params_db[i]) != null ) {
+                str_value = (plant_data.get(params_db[i])).toString().replace("\"", "");
+
+                if ( str_value != "" && str_value.charAt(0) != '(' )
+                    int_value = Integer.parseInt(str_value);
+            }
             String status_color = new PLANT_PARAMS_COLORS().BLACK;
 
             switch ( param_to_update ){
@@ -353,18 +359,36 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
 
+                case "pump_1":
+
+                    System.out.println("pump_1 ==> " + str_value);
+                    break;
+
+                case "pump_2":
+                    System.out.println("pump_2" + str_value);
+                    break;
+
+                case "pump_3":
+                    System.out.println("pump_3" + str_value);
+                    break;
+
+                case "pump_4":
+                    System.out.println("pump_4" + str_value);
+                    break;
+
                 default:
-                    ((TextView) paramsValuesViewsList.get(i))
-                            .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
+//                    ((TextView) paramsValuesViewsList.get(i))
+//                            .setText((plant_data.get(params_db[i])).toString().replace("\"", ""));
                     status_color = new PLANT_PARAMS_COLORS().BLACK;
                     break;
             }
 
-            ((TextView) paramsValuesViewsList.get(i))
-                    .setText(str_value);
+            if (str_value != "" && param_to_update != "pump_1" && param_to_update != "pump_2" && param_to_update != "pump_3" && param_to_update != "pump_4") {
+                ((TextView) paramsValuesViewsList.get(i))
+                        .setText(str_value);
 
-            ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor(status_color));
-
+                ((TextView) paramsValuesViewsList.get(i)).setTextColor(Color.parseColor(status_color));
+            }
         }
     }
 
@@ -518,6 +542,7 @@ public class MainActivity extends AppCompatActivity {
                         JsonArray dataObject = (JsonArray) parse.parse(String.valueOf(informationString));
 
                         plant_data = (JsonObject) dataObject.get(0);
+                        System.out.println(informationString);
 
                         // UPDATE THE UI
                         runOnUiThread(new Runnable() {
