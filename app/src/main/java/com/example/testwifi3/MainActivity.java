@@ -306,12 +306,18 @@ public class MainActivity extends AppCompatActivity {
 
             switch ( param_to_update ){
                 case "moist":
-                    if ( int_value == 0 ){
-                        str_value = "NEEDS WATER";
-                        status_color = new PLANT_PARAMS_COLORS().RED;
-                    } else {
+                    // 58000 ==> dry
+                    // 25000 ==> good
+
+                    if ( int_value >= 45000 ){
                         str_value = "GOOD";
                         status_color = new PLANT_PARAMS_COLORS().GREEN;
+                    } else if ( int_value >= 35000 ) {
+                        str_value = "OK";
+                        status_color = new PLANT_PARAMS_COLORS().YELLOW;
+                    } else {
+                        str_value = "NEEDS WATER";
+                        status_color = new PLANT_PARAMS_COLORS().RED;
                     }
                     break;
 
@@ -355,6 +361,7 @@ public class MainActivity extends AppCompatActivity {
                         str_value = "ON";
                         status_color = new PLANT_PARAMS_COLORS().GREEN;   // green
                     } else {
+                        str_value = String.valueOf(int_value / 650);
                         status_color = new PLANT_PARAMS_COLORS().YELLOW; // yellow
                     }
                     break;

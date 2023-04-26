@@ -140,6 +140,8 @@
 
                         android:text="last turned on pump_3 on: 20.04 at 14'30"
                         android:textSize="10dp"
+
+                        android:visibility="invisible"
                         />
 
                     <TextView
