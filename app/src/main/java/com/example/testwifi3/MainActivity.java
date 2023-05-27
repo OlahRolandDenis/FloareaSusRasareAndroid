@@ -90,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
         setUpLedsManager(); // control leds ( OPEN PANEL + set ON / OFF / INTENSITY )
 
         setUpPumpsManager(); // control pumps ( OPEN PANEL + add X ml of water to custom pump )
+
+        setUpAudioManager();
     }
 
     private void setUpRefreshManager() {
@@ -115,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
         ((MaterialButton)findViewById(R.id.btnLedON)).setOnClickListener(v -> {
             controlLEDS(100);
 
-            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgress(135);
+            ((SeekBar) findViewById(R.id.ledSeekBar)).setProgress(100);
         } );
 
         // leds off
@@ -133,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
                 i /= 5;
                 i *= 5;
 
-                ((TextView)findViewById(R.id.ledSeekBarValue)).setText(i - 35 + "");
+                ((TextView)findViewById(R.id.ledSeekBarValue)).setText(i + "");
                 value = i;
             }
 
@@ -237,6 +239,20 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.bgTransparentView).setAlpha(0.5f);
     }
 
+    private void setUpAudioManager() {
+        if (!checkExistingCommand() ) {
+            findViewById(R.id.btnPlayAudio).setOnClickListener(v -> {
+                new PostCommandReqTask().execute("audio", "1");
+            });
+
+            findViewById(R.id.btnStopAudio).setOnClickListener(v -> {
+                new PostCommandReqTask().execute("audio", "0");
+            });
+        }
+
+        setRepeatingAsyncTask("GetCommandTask", 2000);
+    }
+
     private Boolean checkExistingCommand() {
         Boolean command_already_running = null;
 
@@ -302,14 +318,14 @@ public class MainActivity extends AppCompatActivity {
                 if ( str_value != "" && str_value.charAt(0) != '(' )
                     int_value = Integer.parseInt(str_value);
             }
-            String status_color = new PLANT_PARAMS_COLORS().BLACK;
+            String status_color = new PLANT_PARAMS_COLORS().BLUE;
 
             switch ( param_to_update ){
                 case "moist":
                     // 58000 ==> dry
-                    // 25000 ==> good
+                    // 27000 ==> good
 
-                    if ( int_value >= 45000 ){
+                    if ( int_value >= 48000 ){
                         str_value = "GOOD";
                         status_color = new PLANT_PARAMS_COLORS().GREEN;
                     } else if ( int_value >= 35000 ) {
@@ -321,14 +337,15 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
 
+                    // 4500 - 27000
                 case "water_level":
-                    if ( int_value < 10 ){
+                    if ( int_value <  9000 ){
                         str_value = "EMPTY";
                         status_color = new PLANT_PARAMS_COLORS().RED;
-                    } else if ( int_value < 30 ){
+                    } else if ( int_value < 15000 ){
                         str_value = "ALMOST EMPTY";
                         status_color = new PLANT_PARAMS_COLORS().RED;
-                    } else if ( int_value < 75 ) {
+                    } else if ( int_value < 25000 ) {
                         str_value = "OK";
                         status_color = new PLANT_PARAMS_COLORS().YELLOW;
                     } else {
@@ -340,6 +357,7 @@ public class MainActivity extends AppCompatActivity {
 
                 case "temperature":
                     // to be determined
+                    str_value += " \u00B0C";
                     break;
 
                 case "sunlight":
@@ -362,8 +380,12 @@ public class MainActivity extends AppCompatActivity {
                         status_color = new PLANT_PARAMS_COLORS().GREEN;   // green
                     } else {
                         str_value = String.valueOf(int_value / 650);
+                        int_value /= 650;
                         status_color = new PLANT_PARAMS_COLORS().YELLOW; // yellow
                     }
+
+                    ((SeekBar) findViewById(R.id.ledSeekBar)).setProgress(int_value + 35);
+                    ((TextView)findViewById(R.id.ledSeekBarValue)).setText((int_value) + "");
                     break;
 
                 case "pump_1":
@@ -434,13 +456,14 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... urls) {
             try {
-                URL url = new URL(new URLS().URL_GLOBAL + new PATHS().PATH_GET_PLANT_DATA );
+                URL url = new URL(new URLS().URL_LOCAL_2 + new PATHS().PATH_GET_PLANT_DATA );
 
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.connect();
 
                 int response_code = conn.getResponseCode();
+                Log.d("CONNECTION", conn.getResponseMessage());
                 if ( response_code != 200 ) {
                     runOnUiThread(new Runnable() {
                         @Override
@@ -466,6 +489,8 @@ public class MainActivity extends AppCompatActivity {
 
                             paramsLayout.setVisibility(View.VISIBLE);
                             paramsLayout.setAlpha(1.0f);
+
+                            ((LinearLayout)findViewById(R.id.textAudioValue)).setVisibility(View.VISIBLE);
 
                             findViewById(R.id.btnRefresh).setVisibility(View.VISIBLE);
                         }
@@ -498,7 +523,7 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... urls) {
             try {
-                URL url = new URL(new URLS().URL_GLOBAL + new PATHS().PATH_GET_PLANT_DATA );
+                URL url = new URL(new URLS().URL_LOCAL_2 + new PATHS().PATH_GET_PLANT_DATA );
 
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -587,7 +612,7 @@ public class MainActivity extends AppCompatActivity {
 
         protected Boolean doInBackground(String... urls) {
             try {
-                URL url = new URL(new URLS().URL_GLOBAL + new PATHS().PATH_GET_COMMAND );
+                URL url = new URL(new URLS().URL_LOCAL_2 + new PATHS().PATH_GET_COMMAND );
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.connect();
@@ -631,7 +656,7 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         protected Void doInBackground(String... command) {
             try {
-                String url = new URLS().URL_GLOBAL + new PATHS().PATH_SEND_COMMAND;
+                String url = new URLS().URL_LOCAL_2 + new PATHS().PATH_SEND_COMMAND;
                 URL object = new URL(url);
                 HttpURLConnection con = (HttpURLConnection) object.openConnection();
                 con.setDoOutput(true);
